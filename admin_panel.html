@@ -22,22 +22,26 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-50 flex min-h-screen font-sans">
+<body class="bg-slate-50 flex min-h-screen font-sans relative overflow-x-hidden">
   
-  <aside id="sidebar" class="bg-gradient-to-b from-blue-900 to-slate-900 text-white w-72 p-6 flex flex-col shadow-2xl z-20">
-    <div class="text-center mb-10 pb-6 border-b border-blue-800">
+  <div id="sidebarOverlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+  <aside id="sidebar" class="bg-gradient-to-b from-blue-900 to-slate-900 text-white w-72 p-6 flex flex-col shadow-2xl fixed inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+    <div class="text-center mb-10 pb-6 border-b border-blue-800 relative">
       <div class="w-16 h-16 bg-blue-800/50 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
         <i class="fas fa-shield-alt text-3xl text-blue-200"></i>
       </div>
       <h2 class="text-2xl font-black tracking-widest text-white">ArCiv</h2>
       <p class="text-xs text-blue-300 font-medium tracking-wider mt-1">İŞLETİM SİSTEMİ</p>
+      
+      <button onclick="toggleSidebar()" class="lg:hidden absolute top-0 right-0 text-blue-300 hover:text-white"><i class="fas fa-times text-xl"></i></button>
     </div>
     
     <nav class="space-y-3 flex-1">
-      <button onclick="renderView('dashboard')" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
+      <button onclick="renderView('dashboard'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
         <i class="fas fa-satellite-dish w-8 text-blue-400 group-hover:text-white transition"></i> Canlı İzleme
       </button>
-      <button onclick="renderView('personel')" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
+      <button onclick="renderView('personel'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
         <i class="fas fa-users w-8 text-blue-400 group-hover:text-white transition"></i> Personel Zekası
       </button>
     </nav>
@@ -47,13 +51,19 @@
     </button>
   </aside>
 
-  <main class="flex-1 p-8 lg:p-10 h-screen overflow-y-auto relative">
+  <main class="flex-1 p-4 md:p-8 lg:p-10 h-screen overflow-y-auto w-full">
     
-    <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-200">
-      <h1 id="sayfaBasligi" class="text-2xl font-bold text-slate-800">Yükleniyor...</h1>
-      <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
-        <div class="w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-bold text-sm" id="adminBasHarf">A</div>
-        <span class="text-sm font-semibold text-slate-700" id="adminIsim">Yönetici</span>
+    <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-200 gap-4">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:hidden bg-white p-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-sm">
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 id="sayfaBasligi" class="text-xl md:text-2xl font-bold text-slate-800 truncate">Yükleniyor...</h1>
+      </div>
+      
+      <div class="flex items-center gap-2 md:gap-3 bg-white px-3 md:px-4 py-2 rounded-full shadow-sm border border-slate-200 flex-shrink-0">
+        <div class="w-7 h-7 md:w-8 md:h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-bold text-xs md:text-sm" id="adminBasHarf">A</div>
+        <span class="text-xs md:text-sm font-semibold text-slate-700 hidden sm:inline" id="adminIsim">Yönetici</span>
       </div>
     </div>
 
@@ -69,8 +79,7 @@
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Sorumlu Personel</label>
-          <select id="sorumluSecim" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-          </select>
+          <select id="sorumluSecim" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></select>
         </div>
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Yapılacak İşlem / Görev</label>
@@ -79,9 +88,7 @@
       </div>
       <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
         <button onclick="aksiyonModalKapat()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
-        <button id="aksiyonKaydetBtn" onclick="aksiyonKaydet()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition flex items-center gap-2">
-          Görevi Ata
-        </button>
+        <button id="aksiyonKaydetBtn" onclick="aksiyonKaydet()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition flex items-center gap-2">Görevi Ata</button>
       </div>
     </div>
   </div>
@@ -90,7 +97,15 @@
     let riskChartIstance = null;
     let personelSozluk = {}; 
     let seciliRaporId = null; 
-    let tumRaporlarData = []; // YENİ: Filtreleme için tüm raporları hafızada tutacağız
+    let tumRaporlarData = [];
+
+    // MOBİL MENÜ TETİKLEYİCİSİ
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
 
     window.onload = async () => {
       const pId = localStorage.getItem('kullanici_id');
@@ -101,17 +116,12 @@
       document.getElementById('adminBasHarf').textContent = ad.charAt(0).toUpperCase();
 
       const { data: pData } = await db.from('personel').select('id, ad_soyad');
-      if(pData) {
-        pData.forEach(p => personelSozluk[p.id] = p.ad_soyad);
-      }
+      if(pData) { pData.forEach(p => personelSozluk[p.id] = p.ad_soyad); }
 
       renderView('dashboard');
     };
 
-    function cikisYap() {
-      localStorage.clear();
-      window.location.href = 'index.html';
-    }
+    function cikisYap() { localStorage.clear(); window.location.href = 'index.html'; }
 
     function renderView(view) {
       const area = document.getElementById('contentArea');
@@ -120,59 +130,59 @@
       if(view === 'dashboard') {
         baslik.textContent = "Saha Operasyon Merkezi";
         area.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4">
-              <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-file-alt"></i></div>
-              <div><p class="text-slate-500 text-sm font-semibold">Toplam Rapor</p><p id="toplamRapor" class="text-3xl font-black text-slate-800">-</p></div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 flex items-center gap-3 md:gap-4">
+              <div class="w-10 h-10 md:w-14 md:h-14 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl"><i class="fas fa-file-alt"></i></div>
+              <div><p class="text-slate-500 text-xs md:text-sm font-semibold">Toplam</p><p id="toplamRapor" class="text-xl md:text-3xl font-black text-slate-800">-</p></div>
             </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4">
-              <div class="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
-              <div><p class="text-slate-500 text-sm font-semibold">Kritik Risk</p><p id="kritikRapor" class="text-3xl font-black text-slate-800">-</p></div>
+            <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 flex items-center gap-3 md:gap-4">
+              <div class="w-10 h-10 md:w-14 md:h-14 bg-red-50 text-red-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
+              <div><p class="text-slate-500 text-xs md:text-sm font-semibold">Kritik</p><p id="kritikRapor" class="text-xl md:text-3xl font-black text-slate-800">-</p></div>
             </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4">
-              <div class="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-bolt"></i></div>
-              <div><p class="text-slate-500 text-sm font-semibold">Orta Risk</p><p id="ortaRapor" class="text-3xl font-black text-slate-800">-</p></div>
+            <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 flex items-center gap-3 md:gap-4">
+              <div class="w-10 h-10 md:w-14 md:h-14 bg-orange-50 text-orange-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl"><i class="fas fa-bolt"></i></div>
+              <div><p class="text-slate-500 text-xs md:text-sm font-semibold">Orta</p><p id="ortaRapor" class="text-xl md:text-3xl font-black text-slate-800">-</p></div>
             </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4">
-              <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-tasks"></i></div>
-              <div><p class="text-slate-500 text-sm font-semibold">Açık Aksiyonlar</p><p id="acikAksiyonRapor" class="text-3xl font-black text-slate-800">-</p></div>
+            <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 flex items-center gap-3 md:gap-4">
+              <div class="w-10 h-10 md:w-14 md:h-14 bg-indigo-50 text-indigo-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl"><i class="fas fa-tasks"></i></div>
+              <div><p class="text-slate-500 text-xs md:text-sm font-semibold">Açık İşler</p><p id="acikAksiyonRapor" class="text-xl md:text-3xl font-black text-slate-800">-</p></div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-              <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i class="fas fa-chart-pie text-blue-500"></i> ArCiv Risk Analiz Dağılımı</h3>
-              <div class="relative h-64 w-full flex justify-center">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:grid-cols-1 lg:gap-8">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-fit">
+              <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i class="fas fa-chart-pie text-blue-500"></i> Risk Analiz Dağılımı</h3>
+              <div class="relative h-56 w-full flex justify-center">
                 <canvas id="riskChart"></canvas>
               </div>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
-              <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2 whitespace-nowrap"><i class="fas fa-stream text-blue-500"></i> Saha Bildirimleri</h3>
+            <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
+              <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-stream text-blue-500"></i> Saha Bildirimleri</h3>
                 
-                <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                  <div class="relative w-full sm:w-48">
+                <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+                  <div class="relative w-full sm:w-44">
                     <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="aramaKutusu" onkeyup="filtreleRaporlar()" placeholder="Kelime, isim ara..." class="w-full border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <input type="text" id="aramaKutusu" onkeyup="filtreleRaporlar()" placeholder="Ara..." class="w-full border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                   </div>
-                  <select id="riskFiltresi" onchange="filtreleRaporlar()" class="w-full sm:w-auto border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 font-medium text-slate-600">
-                    <option value="TÜMÜ">Tüm Riskler</option>
-                    <option value="KRİTİK">⚠️ Sadece Kritik</option>
-                    <option value="ORTA">⚡ Sadece Orta</option>
-                    <option value="DÜŞÜK">✅ Sadece Düşük</option>
-                  </select>
-                  <select id="durumFiltresi" onchange="filtreleRaporlar()" class="w-full sm:w-auto border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 font-medium text-slate-600">
-                    <option value="TÜMÜ">Tüm Durumlar</option>
-                    <option value="AÇIK">Bekleyen (Açık)</option>
-                    <option value="ÇÖZÜLDÜ">Çözülmüş Olanlar</option>
-                  </select>
+                  <div class="flex gap-2 w-full">
+                    <select id="riskFiltresi" onchange="filtreleRaporlar()" class="w-1/2 sm:w-auto border border-slate-200 rounded-lg px-2 py-2 text-xs md:text-sm outline-none bg-slate-50 font-medium text-slate-600">
+                      <option value="TÜMÜ">Tüm Riskler</option>
+                      <option value="KRİTİK">⚠️ Kritik</option>
+                      <option value="ORTA">⚡ Orta</option>
+                      <option value="DÜŞÜK">✅ Düşük</option>
+                    </select>
+                    <select id="durumFiltresi" onchange="filtreleRaporlar()" class="w-1/2 sm:w-auto border border-slate-200 rounded-lg px-2 py-2 text-xs md:text-sm outline-none bg-slate-50 font-medium text-slate-600">
+                      <option value="TÜMÜ">Tüm Durumlar</option>
+                      <option value="AÇIK">Bekleyen</option>
+                      <option value="ÇÖZÜLDÜ">Çözülenler</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               
-              <div id="canliAkiş" class="space-y-4 overflow-y-auto pr-2 max-h-[500px] no-scrollbar">
-                <div class="text-center text-slate-400 py-10"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>Veriler Çekiliyor...</div>
-              </div>
+              <div id="canliAkiş" class="space-y-4 overflow-y-auto pr-2 max-h-[500px] no-scrollbar"></div>
             </div>
           </div>
         `;
@@ -181,10 +191,10 @@
       } else if (view === 'personel') {
         baslik.textContent = "Personel Zekası & Profiller";
         area.innerHTML = `
-          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
-                <tr><th class="p-5 font-semibold">Ad Soyad</th><th class="p-5 font-semibold">Şantiye</th><th class="p-5 font-semibold">Ünvan/Rol</th><th class="p-5 font-semibold text-right">İşlem</th></tr>
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto no-scrollbar">
+            <table class="w-full text-left border-collapse min-w-[500px]">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs md:text-sm uppercase tracking-wider">
+                <tr><th class="p-4 md:p-5 font-semibold">Ad Soyad</th><th class="p-4 md:p-5 font-semibold">Şantiye</th><th class="p-4 md:p-5 font-semibold">Ünvan/Rol</th><th class="p-4 md:p-5 font-semibold text-right">İşlem</th></tr>
               </thead>
               <tbody id="personelTableBody" class="divide-y divide-slate-100"></tbody>
             </table>
@@ -195,19 +205,15 @@
 
     async function verileriYukle() {
       const { data: raporlar } = await db.from('raporlar').select('*, personel(ad_soyad, santiye), aksiyonlar(*)').order('olusturulma_tarihi', {ascending: false});
-      
       if (raporlar) {
-        tumRaporlarData = raporlar; // Filtreleme için global değişkene kopyala
+        tumRaporlarData = raporlar;
         let kritik = 0, orta = 0, dusuk = 0, acikAksiyonSayisi = 0;
 
         raporlar.forEach(r => {
           if(r.risk_seviyesi === 'KRİTİK') kritik++;
           else if(r.risk_seviyesi === 'ORTA') orta++;
           else dusuk++;
-
-          if(r.aksiyonlar && r.aksiyonlar.length > 0 && r.aksiyonlar[0].durum === 'AÇIK') {
-            acikAksiyonSayisi++;
-          }
+          if(r.aksiyonlar && r.aksiyonlar.length > 0 && r.aksiyonlar[0].durum === 'AÇIK') acikAksiyonSayisi++;
         });
 
         document.getElementById('toplamRapor').textContent = raporlar.length;
@@ -216,43 +222,32 @@
         document.getElementById('acikAksiyonRapor').textContent = acikAksiyonSayisi;
 
         cizGrafik(kritik, orta, dusuk);
-        filtreleRaporlar(); // İlk yüklemede filtreleri çalıştırarak ekrana bas
+        filtreleRaporlar();
       }
     }
 
-    // YENİ: ARAMA VE FİLTRELEME MOTORU
     function filtreleRaporlar() {
       const aramaMetni = document.getElementById('aramaKutusu').value.toLowerCase();
       const riskFiltresi = document.getElementById('riskFiltresi').value;
       const durumFiltresi = document.getElementById('durumFiltresi').value;
 
       const filtrelenmis = tumRaporlarData.filter(r => {
-        // 1. Metin Araması (Personel adı, şantiye, rapor metni veya yapay zeka notunda arar)
         const personelAd = personelSozluk[r.personel_id] || (r.personel ? r.personel.ad_soyad : '');
         const santiye = r.personel ? r.personel.santiye : '';
         const icerikMetni = `${personelAd} ${santiye} ${r.rapor_metni} ${r.ai_aciklama || ''}`.toLowerCase();
         const aramaUyumu = icerikMetni.includes(aramaMetni);
-
-        // 2. Risk Seviyesi Seçimi
         const riskUyumu = riskFiltresi === 'TÜMÜ' || r.risk_seviyesi === riskFiltresi;
-
-        // 3. Aksiyon Durumu Seçimi
         let durumUyumu = true;
         const aksiyon = r.aksiyonlar && r.aksiyonlar.length > 0 ? r.aksiyonlar[0] : null;
-        
-        if (durumFiltresi === 'AÇIK') {
-          durumUyumu = aksiyon && aksiyon.durum === 'AÇIK';
-        } else if (durumFiltresi === 'ÇÖZÜLDÜ') {
-          durumUyumu = aksiyon && aksiyon.durum === 'ÇÖZÜLDÜ';
-        }
+        if (durumFiltresi === 'AÇIK') durumUyumu = aksiyon && aksiyon.durum === 'AÇIK';
+        else if (durumFiltresi === 'ÇÖZÜLDÜ') durumUyumu = aksiyon && aksiyon.durum === 'ÇÖZÜLDÜ';
 
         return aramaUyumu && riskUyumu && durumUyumu;
       });
 
-      // Sonuçları Ekrana Bas
       const akisAlani = document.getElementById('canliAkiş');
       if (filtrelenmis.length === 0) {
-        akisAlani.innerHTML = `<div class="text-center text-slate-400 py-10"><i class="fas fa-search text-3xl mb-3"></i><br>Filtrelere uygun rapor bulunamadı.</div>`;
+        akisAlani.innerHTML = `<div class="text-center text-slate-400 py-10"><i class="fas fa-search text-3xl mb-3"></i><br>Rapor bulunamadı.</div>`;
       } else {
         akisAlani.innerHTML = filtrelenmis.map(r => olusturRaporKarti(r)).join('');
       }
@@ -261,19 +256,13 @@
     function cizGrafik(kritik, orta, dusuk) {
       const ctx = document.getElementById('riskChart').getContext('2d');
       if(riskChartIstance) riskChartIstance.destroy(); 
-
       riskChartIstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['Kritik Risk', 'Orta Risk', 'Güvenli'],
-          datasets: [{
-            data: [kritik, orta, dusuk],
-            backgroundColor: ['#ef4444', '#f97316', '#22c55e'],
-            borderWidth: 0,
-            hoverOffset: 4
-          }]
+          labels: ['Kritik', 'Orta', 'Güvenli'],
+          datasets: [{ data: [kritik, orta, dusuk], backgroundColor: ['#ef4444', '#f97316', '#22c55e'], borderWidth: 0, hoverOffset: 4 }]
         },
-        options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+        options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }, maintainAspectRatio: false }
       });
     }
 
@@ -287,113 +276,68 @@
       if (r.fotograflar && r.fotograflar.trim() !== '') {
         const fotolar = r.fotograflar.split(',');
         fotoHTML = `<div class="flex gap-2 mt-3 overflow-x-auto pb-2 no-scrollbar">` + 
-          fotolar.map(f => `<a href="${f}" target="_blank"><img src="${f}" class="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 hover:border-blue-500 transition shadow-sm"></a>`).join('') + 
-          `</div>`;
+          fotolar.map(f => `<a href="${f}" target="_blank"><img src="${f}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border-2 border-slate-200 hover:border-blue-500 transition shadow-sm"></a>`).join('') + `</div>`;
       }
 
       let aksiyonHTML = '';
       const aksiyon = r.aksiyonlar && r.aksiyonlar.length > 0 ? r.aksiyonlar[0] : null;
 
       if (!aksiyon) {
-        aksiyonHTML = `<button onclick="aksiyonModalAc('${r.id}')" class="text-sm bg-white border border-slate-300 text-slate-700 hover:text-blue-600 hover:border-blue-400 px-4 py-2 rounded-lg font-bold transition shadow-sm"><i class="fas fa-plus mr-1"></i> Aksiyon Ata</button>`;
+        aksiyonHTML = `<button onclick="aksiyonModalAc('${r.id}')" class="text-xs md:text-sm bg-white border border-slate-300 text-slate-700 hover:text-blue-600 hover:border-blue-400 px-3 py-1.5 rounded-lg font-bold transition shadow-sm"><i class="fas fa-plus mr-1"></i> Aksiyon Ata</button>`;
       } else {
         if (aksiyon.durum === 'AÇIK') {
           aksiyonHTML = `
-            <div class="w-full bg-orange-50 border border-orange-200 p-4 rounded-xl mt-3 flex justify-between items-center">
-              <div>
-                <p class="text-xs font-bold text-orange-600 uppercase mb-1"><i class="fas fa-hard-hat mr-1"></i> MÜDAHALE BEKLENİYOR</p>
-                <p class="text-sm font-semibold text-slate-800">${aksiyon.aksiyon_metni}</p>
-                <p class="text-xs text-slate-500 mt-1">Sorumlu: <b>${personelSozluk[aksiyon.sorumlu_id] || 'Bilinmiyor'}</b></p>
+            <div class="w-full bg-orange-50 border border-orange-200 p-3 rounded-xl mt-2 flex justify-between items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] font-bold text-orange-600 uppercase"><i class="fas fa-hard-hat mr-1"></i> MÜDAHALE BEKLENİYOR</p>
+                <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${aksiyon.aksiyon_metni}</p>
+                <p class="text-[10px] text-slate-500">Sorumlu: <b>${personelSozluk[aksiyon.sorumlu_id] || 'Bilinmiyor'}</b></p>
               </div>
-              <button onclick="aksiyonCozuldu('${aksiyon.id}')" class="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg shadow transition flex-shrink-0" title="Çözüldü Olarak İşaretle">
-                <i class="fas fa-check text-lg"></i>
-              </button>
+              <button onclick="aksiyonCozuldu('${aksiyon.id}')" class="bg-green-500 hover:bg-green-600 text-white p-2 md:p-3 rounded-lg shadow transition flex-shrink-0"><i class="fas fa-check text-sm"></i></button>
             </div>
           `;
         } else {
           const cozumTarihi = new Date(aksiyon.cozum_tarihi).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
           aksiyonHTML = `
-            <div class="w-full bg-green-50 border border-green-200 p-3 rounded-xl mt-3 opacity-75">
-              <p class="text-xs font-bold text-green-700 uppercase"><i class="fas fa-check-double mr-1"></i> ÇÖZÜLDÜ</p>
-              <p class="text-xs text-slate-600 mt-1">Sorumlu <b>${personelSozluk[aksiyon.sorumlu_id] || 'Bilinmiyor'}</b> tarafından kapatıldı. (${cozumTarihi})</p>
+            <div class="w-full bg-green-50 border border-green-200 p-2.5 rounded-xl mt-2 opacity-75 text-[11px] md:text-xs">
+              <p class="font-bold text-green-700 uppercase"><i class="fas fa-check-double mr-1"></i> ÇÖZÜLDÜ</p>
+              <p class="text-slate-600 mt-0.5">Sorumlu <b>${personelSozluk[aksiyon.sorumlu_id] || 'Bilinmiyor'}</b> kapattı. (${cozumTarihi})</p>
             </div>
           `;
         }
       }
 
       return `
-        <div class="p-5 border border-slate-200 rounded-2xl bg-white hover:border-blue-200 transition shadow-sm flex flex-col">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h4 class="font-bold text-slate-800">${personelSozluk[r.personel_id] || personelAd} <span class="text-xs font-normal text-slate-500 ml-2">${santiyeAd}</span></h4>
-              <span class="text-xs text-slate-400"><i class="far fa-clock"></i> ${tarih}</span>
+        <div class="p-4 md:p-5 border border-slate-200 rounded-2xl bg-white hover:border-blue-200 transition shadow-sm flex flex-col">
+          <div class="flex justify-between items-start mb-2 gap-2">
+            <div class="min-w-0">
+              <h4 class="font-bold text-slate-800 text-sm md:text-base truncate">${personelSozluk[r.personel_id] || personelAd} <span class="text-xs font-normal text-slate-500 ml-1 hidden sm:inline">${santiyeAd}</span></h4>
+              <span class="text-[10px] md:text-xs text-slate-400"><i class="far fa-clock"></i> ${tarih}</span>
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-bold border ${riskRenk}">${r.risk_seviyesi || 'BELİRSİZ'}</span>
+            <span class="px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold border flex-shrink-0 ${riskRenk}">${r.risk_seviyesi || 'BELİRSİZ'}</span>
           </div>
-          <p class="text-sm text-slate-700 leading-relaxed mt-2">${r.rapor_metni}</p>
-          
-          ${r.ai_aciklama ? `<div class="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-dashed border-slate-300"><i class="fas fa-robot text-indigo-500 mr-1"></i> <b>AI Notu:</b> ${r.ai_aciklama}</div>` : ''}
-          
+          <p class="text-xs md:text-sm text-slate-700 leading-relaxed mt-1">${r.rapor_metni}</p>
+          ${r.ai_aciklama ? `<div class="mt-2 text-[11px] md:text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-dashed border-slate-300"><i class="fas fa-robot text-indigo-500 mr-1"></i> <b>AI:</b> ${r.ai_aciklama}</div>` : ''}
           ${fotoHTML}
-          
-          <div class="mt-4 border-t border-slate-100 pt-3 flex justify-between items-center w-full flex-wrap gap-2">
-            <div class="flex-1 min-w-[250px]">${aksiyonHTML}</div>
-            ${r.gps_enlem ? `<a href="https://www.google.com/maps?q=$${r.gps_enlem},${r.gps_boylam}" target="_blank" class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-2 rounded-lg transition self-end"><i class="fas fa-map-marker-alt"></i> Haritada Gör</a>` : ''}
+          <div class="mt-3 border-t border-slate-100 pt-2.5 flex justify-between items-center w-full flex-wrap gap-2">
+            <div class="flex-1 min-w-[200px]">${aksiyonHTML}</div>
+            ${r.gps_enlem ? `<a href="http://maps.google.com/?q=${r.gps_enlem},${r.gps_boylam}" target="_blank" class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1.5 rounded-lg transition self-end"><i class="fas fa-map-marker-alt"></i> Konum</a>` : ''}
           </div>
         </div>
       `;
     }
 
-    function aksiyonModalAc(raporId) {
-      seciliRaporId = raporId;
-      const select = document.getElementById('sorumluSecim');
-      select.innerHTML = '<option value="">Görevlendirilecek personeli seçin...</option>' + 
-        Object.keys(personelSozluk).map(id => `<option value="${id}">${personelSozluk[id]}</option>`).join('');
-      document.getElementById('aksiyonModal').classList.remove('hidden');
-    }
-
-    function aksiyonModalKapat() {
-      document.getElementById('aksiyonModal').classList.add('hidden');
-      document.getElementById('aksiyonMetni').value = '';
-      seciliRaporId = null;
-    }
-
-    async function aksiyonKaydet() {
-      const sorumluId = document.getElementById('sorumluSecim').value;
-      const metin = document.getElementById('aksiyonMetni').value.trim();
-      
-      if(!sorumluId || !metin) return alert("Lütfen sorumlu personeli seçin ve yapılacak işlemi yazın.");
-
-      const btn = document.getElementById('aksiyonKaydetBtn');
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Atanıyor...`;
-      btn.disabled = true;
-
-      const { error } = await db.from('aksiyonlar').insert({ rapor_id: seciliRaporId, sorumlu_id: sorumluId, aksiyon_metni: metin });
-
-      btn.innerHTML = `Görevi Ata`;
-      btn.disabled = false;
-
-      if(error) { alert("Görev atanırken hata oluştu."); } 
-      else { aksiyonModalKapat(); verileriYukle(); }
-    }
-
-    async function aksiyonCozuldu(aksiyonId) {
-      if(!confirm("Bu görevi çözüldü olarak kapatmak istediğinize emin misiniz?")) return;
-      const { error } = await db.from('aksiyonlar').update({ durum: 'ÇÖZÜLDÜ', cozum_tarihi: new Date().toISOString() }).eq('id', aksiyonId);
-      if(!error) verileriYukle(); else alert("Hata oluştu.");
-    }
-
-    // --- PROFİL FONKSİYONLARI ---
+    // --- PERSONEL METODLARI ---
     async function personelleriGetir() {
       const { data } = await db.from('personel').select('*');
       if (data) {
         const body = document.getElementById('personelTableBody');
         body.innerHTML = data.map(p => `
-          <tr class="hover:bg-blue-50 transition group">
-            <td class="p-5 font-bold text-slate-800 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold">${p.ad_soyad.charAt(0)}</div>${p.ad_soyad}</td>
-            <td class="p-5 text-slate-600 font-medium">${p.santiye || '-'}</td>
-            <td class="p-5"><span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">${p.unvan || p.rol}</span></td>
-            <td class="p-5 text-right"><button onclick="showProfile('${p.id}')" class="bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition">İncele <i class="fas fa-chevron-right text-xs ml-1"></i></button></td>
+          <tr class="hover:bg-blue-50 transition">
+            <td class="p-4 md:p-5 font-bold text-slate-800 flex items-center gap-2 md:gap-3 whitespace-nowrap"><div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">${p.ad_soyad.charAt(0)}</div>${p.ad_soyad}</td>
+            <td class="p-4 md:p-5 text-slate-600 font-medium whitespace-nowrap">${p.santiye || '-'}</td>
+            <td class="p-4 md:p-5 whitespace-nowrap"><span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">${p.unvan || p.rol}</span></td>
+            <td class="p-4 md:p-5 text-right whitespace-nowrap"><button onclick="showProfile('${p.id}')" class="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">İncele</button></td>
           </tr>`).join('');
       }
     }
@@ -402,32 +346,28 @@
       document.getElementById('sayfaBasligi').textContent = "Personel Zeka Profili";
       const { data: p } = await db.from('personel').select('*').eq('id', personelId).single();
       const { data: raporlar } = await db.from('raporlar').select('*, personel(ad_soyad, santiye), aksiyonlar(*)').eq('personel_id', personelId).order('olusturulma_tarihi', {ascending: false});
-      
       const tumRaporlar = raporlar && raporlar.length > 0 ? raporlar.map(r => r.rapor_metni).join(' | ') : "Rapor yok";
       
       document.getElementById('contentArea').innerHTML = `
-        <button onclick="renderView('personel')" class="mb-6 text-slate-500 hover:text-blue-900 font-bold transition flex items-center bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm inline-block"><i class="fas fa-arrow-left mr-2"></i> Listeye Dön</button>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center relative overflow-hidden h-fit">
-            <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-blue-100 to-transparent"></div>
-            <div class="w-28 h-28 bg-white border-4 border-white rounded-full flex items-center justify-center text-blue-900 text-4xl font-black mb-4 shadow-xl z-10">${p.ad_soyad.charAt(0)}</div>
-            <h2 class="text-2xl font-black text-slate-800 z-10">${p.ad_soyad}</h2>
-            <p class="text-slate-500 mb-8 font-medium z-10">${p.unvan || 'Personel'} • ${p.santiye || 'Bilinmeyen Şantiye'}</p>
-            <button id="aiBtn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 text-lg"><i class="fas fa-brain"></i> Derin AI Analizi</button>
-            <div id="aiSonucAlani" class="hidden w-full mt-6 text-left"><div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 relative"><div class="absolute -top-3 left-6 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fas fa-sparkles mr-1"></i> ArCiv AI</div><div id="analizYazisi" class="text-sm text-slate-800 space-y-3 leading-relaxed mt-2"></div></div></div>
+        <button onclick="renderView('personel')" class="mb-6 text-slate-500 hover:text-blue-900 font-bold transition flex items-center bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm inline-block text-xs md:text-sm"><i class="fas fa-arrow-left mr-2"></i> Listeye Dön</button>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center relative overflow-hidden h-fit">
+            <div class="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-blue-100 to-transparent"></div>
+            <div class="w-20 h-20 md:w-24 md:h-24 bg-white border-4 border-white rounded-full flex items-center justify-center text-blue-900 text-3xl font-black mb-3 shadow-md z-10">${p.ad_soyad.charAt(0)}</div>
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 z-10 text-center">${p.ad_soyad}</h2>
+            <p class="text-slate-500 mb-6 font-medium text-xs md:text-sm z-10 text-center">${p.unvan || 'Personel'} • ${p.santiye || 'Şantiye'}</p>
+            <button id="aiBtn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base"><i class="fas fa-brain"></i> Derin AI Analizi</button>
+            <div id="aiSonucAlani" class="hidden w-full mt-6 text-left"><div class="bg-indigo-50 p-4 md:p-5 rounded-2xl border border-indigo-100 relative"><div class="absolute -top-3 left-4 bg-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm"><i class="fas fa-sparkles mr-1"></i> ArCiv AI</div><div id="analizYazisi" class="text-xs md:text-sm text-slate-800 space-y-3 leading-relaxed mt-2"></div></div></div>
           </div>
-          <div class="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-            <h3 class="text-xl font-bold mb-6 text-slate-800 flex items-center"><i class="fas fa-history text-blue-500 mr-3"></i> Tüm Saha Kayıtları</h3>
-            <div id="raporListesi" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 no-scrollbar"></div>
+          <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200">
+            <h3 class="text-lg md:text-xl font-bold mb-4 text-slate-800 flex items-center"><i class="fas fa-history text-blue-500 mr-2"></i> Tüm Kayıtlar</h3>
+            <div id="raporListesi" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar"></div>
           </div>
         </div>`;
         
       const raporListesiAlani = document.getElementById('raporListesi');
-      if(raporlar && raporlar.length > 0) {
-        raporListesiAlani.innerHTML = raporlar.map(r => olusturRaporKarti(r)).join('');
-      } else {
-        raporListesiAlani.innerHTML = `<div class="text-center text-slate-400 py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200"><i class="fas fa-folder-open text-3xl mb-3"></i><br>Bu çalışana ait kayıt bulunamadı.</div>`;
-      }
+      if(raporlar && raporlar.length > 0) { raporListesiAlani.innerHTML = raporlar.map(r => olusturRaporKarti(r)).join(''); } 
+      else { raporListesiAlani.innerHTML = `<div class="text-center text-slate-400 py-8 text-xs md:text-sm"><i class="fas fa-folder-open text-2xl mb-2"></i><br>Kayıt bulunamadı.</div>`; }
       document.getElementById('aiBtn').addEventListener('click', function() { calistirAI(tumRaporlar); });
     }
 
@@ -436,19 +376,10 @@
       const btn = document.getElementById('aiBtn');
       const sonucAlani = document.getElementById('aiSonucAlani');
       const analizYazisi = document.getElementById('analizYazisi');
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Zeka Devrede...`;
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Analiz Ediliyor...`;
       btn.disabled = true;
 
-      const prompt = `Sen profesyonel bir İş Sağlığı ve Güvenliği (İSG) uzmanı ve Endüstriyel Psikologsun. Aşağıda bir personelin yazdığı saha raporları bulunuyor. Bu raporları inceleyerek çalışanın kapsamlı bir profilini çıkar.
-      Lütfen yanıtını HMTL kullanmadan, sade metin olarak tam olarak şu 3 başlık altında ver:
-      **1. İSG VE RİSK ANALİZİ:**
-      Çalışanın raporlama kalitesi, tehlikeyi fark etme becerisi ve genel iş güvenliği yaklaşımı nedir?
-      **2. DUYGUSAL VE PSİKOLOJİK PROFİL:**
-      Raporların dilinden ve vurgularından yola çıkarak; çalışanın anlık stres seviyesi, motivasyonu, dikkat dağınıklığı veya tükenmişlik durumu hakkında ne söyleyebilirsin?
-      **3. PUANTAJ:**
-      Sadece sayısal bir değer ver. Çalışanın İSG farkındalığı ve rapor kalitesine göre 100 üzerinden puanı.
-      İşte çalışanın raporları:
-      ${metin}`;
+      const prompt = `Sen profesyonel bir İş Sağlığı ve Güvenliği (İSG) uzmanı ve Endüstriyel Psikologsun. Aşağıda bir personelin yazdığı saha raporları bulunuyor. Bu raporları inceleyerek çalışanın kapsamlı bir profilini çıkar. Yanıtını sade metin olarak şu 3 başlık altında ver: **1. İSG VE RİSK ANALİZİ:** Çalışanın becerisi. **2. DUYGUSAL VE PSİKOLOJİK PROFİL:** Stres ve motivasyonu. **3. PUANTAJ:** 100 üzerinden sadece puanı. Raporlar: ${metin}`;
 
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -457,17 +388,14 @@
         if (!response.ok) throw new Error(result.error?.message || "API Hatası");
 
         let analiz = result.candidates[0].content.parts[0].text;
-        analiz = analiz.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 block mt-4 mb-1 text-base">$1</strong>');
+        analiz = analiz.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 block mt-3 mb-1 text-sm font-bold">$1</strong>');
         analiz = analiz.replace(/\n/g, '<br>');
         sonucAlani.classList.remove('hidden');
         analizYazisi.innerHTML = analiz;
       } catch(e) { 
-        if (e.message.includes("quota") || e.message.includes("429")) { alert("ArCiv AI şu an çok yoğun! Lütfen 1 dakika bekleyip tekrar deneyin."); } 
-        else { alert("Yapay zeka analizi sırasında bir hata oluştu: " + e.message); }
-      } finally {
-        btn.innerHTML = `<i class="fas fa-brain"></i> Derin AI Analizi`;
-        btn.disabled = false;
-      }
+        if (e.message.includes("quota") || e.message.includes("429") || e.message.includes("demand")) { alert("ArCiv AI şu an çok yoğun. Lütfen birkaç dakika sonra deneyin."); } 
+        else { alert("Hata: " + e.message); }
+      } finally { btn.innerHTML = `<i class="fas fa-brain"></i> Derin AI Analizi`; btn.disabled = false; }
     }
   </script>
 </body>
