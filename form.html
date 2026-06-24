@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arıkan İSG — Operasyon Merkezi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="config.js"></script>
+  
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+  <style>
+    .recording { animation: pulse-red 1.5s infinite; background-color: #fee2e2 !important; color: #dc2626 !important; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <div id="offlineBanner" class="hidden bg-red-500 text-white text-center py-2 text-sm font-bold shadow-md transition-all">
+    <i class="fas fa-wifi-slash mr-2"></i> İnternet Bağlantısı Yok - Raporlar cihaza kaydedilecek.
+  </div>
+  
+  <div id="syncBanner" class="hidden bg-yellow-500 text-white text-center py-2 text-sm font-bold shadow-md transition-all cursor-pointer" onclick="senkronizeEt()">
+    <i class="fas fa-cloud-upload-alt mr-2"></i> <span id="syncSayi">0</span> rapor bekliyor. Göndermek için tıklayın.
+  </div>
+
+  <div class="p-4 md:p-8">
+    <nav class="max-w-3xl mx-auto flex justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+      <h1 class="text-xl font-black text-blue-900 tracking-tight"><i class="fas fa-shield-alt mr-2"></i>ARIKAN İSG</h1>
+      <div class="flex items-center gap-4">
+        <button onclick="toggleModal()" class="flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-900 transition">
+          <i class="fas fa-clipboard-list"></i> Raporlarım
+        </button>
+        <button onclick="cikisYap()" class="text-sm font-semibold text-red-600 hover:text-red-800 transition">
+          <i class="fas fa-sign-out-alt mr-1"></i> Çıkış
+        </button>
+      </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 id="adSoyad" class="text-xl font-bold text-slate-800">Yükleniyor...</h2>
+        <p id="unvanSantiye" class="text-blue-600 font-medium text-sm mt-1"></p>
+        <div id="gpsKutusu" class="mt-4 text-xs text-slate-500 font-mono bg-slate-100 p-2 rounded-lg">
+           <i class="fas fa-spinner fa-spin"></i> Konum aranıyor...
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        
+        <div class="flex justify-between items-center mb-2">
+          <label class="block text-sm font-bold text-slate-700">Yeni Rapor</label>
+          <label for="fotoYukle" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 border border-slate-300">
+            <i class="fas fa-camera text-blue-600"></i> Fotoğraf
+            <input type="file" id="fotoYukle" accept="image/*" multiple class="hidden" onchange="fotoSecildi(this)">
+          </label>
+        </div>
+        
+        <div id="fotoOnizleme" class="hidden mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl transition-all">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-semibold text-slate-500">Seçilenler (<span id="fotoSayisi">0</span>)</span>
+            <button onclick="tumFotolariSil()" class="text-xs text-red-500 hover:text-red-700 font-bold"><i class="fas fa-trash mr-1"></i>Hepsini Sil</button>
+          </div>
+          <div id="fotoGaleri" class="flex gap-3 overflow-x-auto pb-2 no-scrollbar"></div>
+        </div>
+
+        <div class="relative">
+          <textarea id="rapor" class="w-full p-4 border border-slate-200 rounded-xl h-40 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Rapor detaylarını girin..."></textarea>
+          <button id="micBtn" onclick="sesleYaz()" class="absolute right-3 bottom-3 bg-blue-50 text-blue-900 w-10 h-10 rounded-full hover:bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-microphone"></i>
+          </button>
+        </div>
+        
+        <div id="analizKutusu" class="hidden mt-4 p-4 rounded-xl border-2 text-center transition-all">
+           <h4 id="riskBasligi" class="font-bold text-lg mb-1"></h4>
+           <p id="riskAciklamasi" class="text-sm mt-1"></p>
+        </div>
+        
+        <button id="gonderBtn" onclick="kaydet()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 mt-4 rounded-xl transition shadow-lg shadow-blue-200">
+          Raporu Gönder
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="raporModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-slate-800"><i class="fas fa-file-alt mr-2 text-green-600"></i>Geçmiş Raporlar</h3>
+        <button onclick="toggleModal()" class="text-slate-500 hover:text-slate-800"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="raporListesi" class="p-4 space-y-3 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    let enlem = 0, boylam = 0;
+    let seciliDosyalar = [];
+    let seciliDosyalarBase64 = []; // Çevrimdışı mod için fotoğrafları metin olarak tutar
+
+    window.onload = async () => {
+      const pId = localStorage.getItem('kullanici_id');
+      if (!pId) { window.location.href = 'index.html'; return; }
+      
+      const { data: pData } = await db.from('personel').select('*').eq('id', pId).single();
+      if(pData) {
+        document.getElementById('adSoyad').textContent = pData.ad_soyad;
+        document.getElementById('unvanSantiye').textContent = `${pData.unvan || 'İSG Uzmanı'} | ${pData.santiye || 'Merkez'}`;
+      }
+      
+      navigator.geolocation.getCurrentPosition(pos => {
+        enlem = pos.coords.latitude; boylam = pos.coords.longitude;
+        document.getElementById('gpsKutusu').innerHTML = `<i class="fas fa-check-circle mr-2 text-green-600"></i> Konum: ${enlem.toFixed(3)}, ${boylam.toFixed(3)}`;
+      });
+      
+      raporlariGetir();
+      baglantiKontrolu(); // Çevrimdışı kuyruğu kontrol et
+    };
+
+    function toggleModal() { document.getElementById('raporModal').classList.toggle('hidden'); }
+    function cikisYap() { localStorage.removeItem('kullanici_id'); window.location.href = 'index.html'; }
+
+    // İNTERNET BAĞLANTISI DİNLEYİCİLERİ
+    window.addEventListener('online', baglantiKontrolu);
+    window.addEventListener('offline', baglantiKontrolu);
+
+    function baglantiKontrolu() {
+      const offlineBanner = document.getElementById('offlineBanner');
+      const syncBanner = document.getElementById('syncBanner');
+      const kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
+
+      if (!navigator.onLine) {
+        offlineBanner.classList.remove('hidden');
+        syncBanner.classList.add('hidden');
+      } else {
+        offlineBanner.classList.add('hidden');
+        if (kuyruk.length > 0) {
+          syncBanner.classList.remove('hidden');
+          document.getElementById('syncSayi').textContent = kuyruk.length;
+          senkronizeEt(); // İnternet geldiği gibi otomatik yollamayı dene
+        } else {
+          syncBanner.classList.add('hidden');
+        }
+      }
+    }
+
+    // FOTOĞRAF İŞLEMLERİ
+    function fotoSecildi(input) {
+      if (input.files && input.files.length > 0) {
+        document.getElementById('fotoOnizleme').classList.remove('hidden');
+        const galeri = document.getElementById('fotoGaleri');
+        
+        for(let i = 0; i < input.files.length; i++) {
+          const dosya = input.files[i];
+          seciliDosyalar.push(dosya);
+          
+          const okuyucu = new FileReader();
+          okuyucu.onload = function(e) {
+            seciliDosyalarBase64.push(e.target.result); // Base64 olarak kaydet
+            const gecerliIndex = seciliDosyalarBase64.length - 1;
+
+            const div = document.createElement('div');
+            div.className = "relative flex-shrink-0 w-24 h-24";
+            div.innerHTML = `
+              <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg border border-slate-300">
+              <button onclick="tekFotoSil(${gecerliIndex}, this)" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs shadow hover:bg-red-600 transition flex items-center justify-center"><i class="fas fa-times"></i></button>
+            `;
+            galeri.appendChild(div);
+            guncelleFotoSayisi();
+          }
+          okuyucu.readAsDataURL(dosya);
+        }
+        input.value = "";
+      }
+    }
+
+    function tekFotoSil(index, btnElement) {
+      seciliDosyalar[index] = null;
+      seciliDosyalarBase64[index] = null;
+      btnElement.parentElement.remove();
+      guncelleFotoSayisi();
+      if (seciliDosyalarBase64.filter(d => d !== null).length === 0) tumFotolariSil();
+    }
+
+    function tumFotolariSil() {
+      seciliDosyalar = [];
+      seciliDosyalarBase64 = [];
+      document.getElementById('fotoGaleri').innerHTML = "";
+      document.getElementById('fotoOnizleme').classList.add('hidden');
+      document.getElementById('fotoYukle').value = "";
+    }
+
+    function guncelleFotoSayisi() {
+      const aktifDosyalar = seciliDosyalarBase64.filter(d => d !== null).length;
+      document.getElementById('fotoSayisi').textContent = aktifDosyalar;
+    }
+
+    // BASE64'Ü GERİ DOSYAYA ÇEVİRME YARDIMCI FONKSİYONU
+    function dataURLtoFile(dataurl, filename) {
+        let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+        while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+        return new File([u8arr], filename, {type:mime});
+    }
+
+    function sesleYaz() {
+      if (!('webkitSpeechRecognition' in window)) { alert("Tarayıcınız sesle yazmayı desteklemiyor."); return; }
+      const rec = new webkitSpeechRecognition();
+      rec.lang = 'tr-TR'; rec.continuous = false; 
+      const textarea = document.getElementById('rapor');
+      const micBtn = document.getElementById('micBtn');
+
+      rec.onstart = () => { micBtn.classList.add('recording'); textarea.placeholder = "Dinliyorum, konuşabilirsiniz..."; };
+      rec.onresult = e => { textarea.value += (textarea.value ? " " : "") + e.results[0][0].transcript; };
+      rec.onerror = e => { console.error("Ses hatası:", e.error); alert("Mikrofona erişilemedi."); };
+      rec.onend = () => { micBtn.classList.remove('recording'); textarea.placeholder = "Rapor detaylarını girin..."; };
+      rec.start();
+    }
+
+    // ANA KAYDETME FONKSİYONU (ONLINE / OFFLINE KARAR MERKEZİ)
+    async function kaydet() {
+      const metin = document.getElementById('rapor').value;
+      if(!metin) return alert("Rapor boş!");
+
+      // Eğer internet YOKSA raporu telefona (kuyruğa) kaydet
+      if (!navigator.onLine) {
+        let kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
+        kuyruk.push({
+          metin: metin,
+          enlem: enlem,
+          boylam: boylam,
+          fotograflar: seciliDosyalarBase64.filter(d => d !== null),
+          tarih: new Date().toISOString()
+        });
+        localStorage.setItem('arciv_kuyruk', JSON.stringify(kuyruk));
+        
+        document.getElementById('rapor').value = '';
+        tumFotolariSil();
+        alert("İnternet bağlantısı yok! Raporunuz cihaza kaydedildi. Bağlantı geldiğinde otomatik gönderilecektir.");
+        baglantiKontrolu();
+        return;
+      }
+
+      // İNTERNET VARSA NORMAL İŞLEYİŞ
+      const btn = document.getElementById('gonderBtn');
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> İşleniyor...`;
+      btn.disabled = true;
+
+      const box = document.getElementById('analizKutusu');
+      box.classList.remove('hidden');
+      document.getElementById('riskBasligi').textContent = "Sisteme Aktarılıyor...";
+
+      let yuklenenFotoURLleri = [];
+      const temizDosyalar = seciliDosyalarBase64.filter(d => d !== null);
+      
+      if (temizDosyalar.length > 0) {
+        document.getElementById('riskAciklamasi').textContent = "Fotoğraflar yükleniyor...";
+        for (let i = 0; i < temizDosyalar.length; i++) {
+          const dosya = dataURLtoFile(temizDosyalar[i], 'foto.png'); // Base64'ü File objesine çevir
+          const dosyaAdi = `rapor_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
+          
+          const { data: uploadData, error: uploadError } = await db.storage.from('rapor_fotograflari').upload(dosyaAdi, dosya);
+          if (!uploadError) {
+            const { data: publicUrlData } = db.storage.from('rapor_fotograflari').getPublicUrl(dosyaAdi);
+            yuklenenFotoURLleri.push(publicUrlData.publicUrl);
+          }
+        }
+      }
+
+      document.getElementById('riskAciklamasi').textContent = "Yapay Zeka Analiz Ediyor...";
+      let risk = "DÜŞÜK", aciklama = "Analiz yapılamadı.";
+
+      try {
+        const { data: analiz, error: aiError } = await db.functions.invoke('analiz-et', { body: { metin: metin } });
+        if(!aiError && analiz) { risk = analiz.seviye; aciklama = analiz.aciklama; }
+      } catch (e) { console.error("AI Hatası:", e); }
+
+      await db.from('raporlar').insert({
+        personel_id: localStorage.getItem('kullanici_id'),
+        rapor_metni: metin,
+        gps_enlem: enlem,
+        gps_boylam: boylam,
+        risk_seviyesi: risk,
+        ai_aciklama: aciklama,
+        fotograflar: yuklenenFotoURLleri.join(',')
+      });
+      
+      document.getElementById('riskBasligi').textContent = risk === 'KRİTİK' ? "⚠️ KRİTİK RİSK!" : "✅ GÜVENLİ";
+      document.getElementById('riskAciklamasi').textContent = aciklama;
+      box.className = `mt-4 p-4 rounded-xl border-2 text-center ${risk === 'KRİTİK' ? 'bg-red-50 border-red-500 text-red-800' : 'bg-green-50 border-green-500 text-green-800'}`;
+      
+      document.getElementById('rapor').value = '';
+      tumFotolariSil();
+      raporlariGetir();
+      
+      btn.innerHTML = `Raporu Gönder`;
+      btn.disabled = false;
+    }
+
+    // KUYRUKTAKİ (OFFLINE) RAPORLARI TOPLUCA GÖNDERME MOTORU
+    async function senkronizeEt() {
+      if (!navigator.onLine) return;
+      
+      let kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
+      if(kuyruk.length === 0) return;
+
+      const syncBanner = document.getElementById('syncBanner');
+      syncBanner.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Bekleyen ${kuyruk.length} rapor merkeze iletiliyor...`;
+      syncBanner.classList.replace('bg-yellow-500', 'bg-blue-600');
+
+      let basariliGonderim = 0;
+
+      for (let i = 0; i < kuyruk.length; i++) {
+        let r = kuyruk[i];
+        let yuklenenFotoURLleri = [];
+        
+        // Önce fotoları yükle
+        if (r.fotograflar && r.fotograflar.length > 0) {
+          for (let j = 0; j < r.fotograflar.length; j++) {
+            const dosya = dataURLtoFile(r.fotograflar[j], 'foto.png');
+            const dosyaAdi = `rapor_sync_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
+            const { error: uploadError } = await db.storage.from('rapor_fotograflari').upload(dosyaAdi, dosya);
+            if (!uploadError) {
+              const { data: publicUrlData } = db.storage.from('rapor_fotograflari').getPublicUrl(dosyaAdi);
+              yuklenenFotoURLleri.push(publicUrlData.publicUrl);
+            }
+          }
+        }
+
+        // Sonra AI analizini yap
+        let risk = "DÜŞÜK", aciklama = "Çevrimdışı kayıt, otomatik analiz edildi.";
+        try {
+          const { data: analiz } = await db.functions.invoke('analiz-et', { body: { metin: r.metin } });
+          if(analiz) { risk = analiz.seviye; aciklama = analiz.aciklama; }
+        } catch(e) {}
+
+        // Veritabanına yaz
+        const { error } = await db.from('raporlar').insert({
+          personel_id: localStorage.getItem('kullanici_id'),
+          rapor_metni: r.metin,
+          gps_enlem: r.enlem,
+          gps_boylam: r.boylam,
+          risk_seviyesi: risk,
+          ai_aciklama: aciklama,
+          fotograflar: yuklenenFotoURLleri.join(','),
+          olusturulma_tarihi: r.tarih
+        });
+
+        if (!error) basariliGonderim++;
+      }
+
+      // Gönderilenleri kuyruktan temizle
+      if (basariliGonderim === kuyruk.length) {
+        localStorage.removeItem('arciv_kuyruk');
+        syncBanner.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Tüm raporlar başarıyla senkronize edildi!`;
+        syncBanner.classList.replace('bg-blue-600', 'bg-green-600');
+        setTimeout(() => syncBanner.classList.add('hidden'), 3000);
+        raporlariGetir();
+      } else {
+        alert("Bazı raporlar senkronize edilemedi. Lütfen sayfayı yenileyip tekrar deneyin.");
+      }
+    }
+
+    async function raporlariGetir() {
+      const { data } = await db.from('raporlar').select('*').eq('personel_id', localStorage.getItem('kullanici_id')).order('olusturulma_tarihi', {ascending: false}).limit(10);
+      const liste = document.getElementById('raporListesi');
+      if(data && data.length > 0) {
+        liste.innerHTML = data.map(r => `
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-bold text-slate-700">${new Date(r.olusturulma_tarihi).toLocaleDateString()}</span>
+              <span class="px-2 py-1 rounded text-xs font-bold ${r.risk_seviyesi === 'KRİTİK' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${r.risk_seviyesi}</span>
+            </div>
+            <p class="text-slate-600">${r.rapor_metni}</p>
+          </div>`).join('');
+      } else { liste.innerHTML = '<p class="text-center text-slate-400 py-4">Henüz rapor bulunamadı.</p>'; }
+    }
+  </script>
+</body>
+</html>

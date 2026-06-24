@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GES Operasyon — Rapor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      .sayfa-kir { page-break-before: always; }
+      .print-shadow { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+    }
+    @page { margin: 1.5cm; size: A4; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+<!-- Kontrol paneli (yazdırılmaz) -->
+<div class="no-print bg-gray-900 text-white px-6 py-4 flex items-center gap-6 flex-wrap">
+  <div class="flex items-center gap-2">
+    <span class="text-xl">☀️</span>
+    <span class="font-bold">GES Rapor Oluşturucu</span>
+  </div>
+
+  <div class="flex items-center gap-3 flex-wrap">
+    <div class="flex items-center gap-2">
+      <label class="text-gray-400 text-sm">Başlangıç:</label>
+      <input type="date" id="baslangic" class="bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-1.5 text-sm">
+    </div>
+    <div class="flex items-center gap-2">
+      <label class="text-gray-400 text-sm">Bitiş:</label>
+      <input type="date" id="bitis" class="bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-1.5 text-sm">
+    </div>
+    <div class="flex items-center gap-2">
+      <label class="text-gray-400 text-sm">Şantiye:</label>
+      <select id="santiye" class="bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-1.5 text-sm">
+        <option value="GES-1">GES-1</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="flex gap-2 ml-auto">
+    <button onclick="raporOlustur()"
+      class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-4 py-2 rounded-lg text-sm transition">
+      📊 Raporu Oluştur
+    </button>
+    <button onclick="window.print()"
+      class="bg-green-500 hover:bg-green-400 text-white font-bold px-4 py-2 rounded-lg text-sm transition">
+      📄 PDF İndir
+    </button>
+    <a href="dashboard.html" class="text-gray-400 hover:text-white text-sm flex items-center px-2">← Dashboard</a>
+  </div>
+</div>
+
+<!-- Yükleniyor -->
+<div id="yukleniyor" class="no-print hidden text-center py-12 text-gray-500">
+  <div class="text-4xl mb-3">⏳</div>
+  <div>Veriler yükleniyor...</div>
+</div>
+
+<!-- RAPOR İÇERİĞİ -->
+<div id="raporIcerik" class="hidden max-w-4xl mx-auto p-6 space-y-6">
+
+  <!-- Kapak -->
+  <div class="bg-white rounded-xl shadow-sm p-8 print-shadow">
+    <div class="flex items-start justify-between mb-6">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <span class="text-4xl">☀️</span>
+          <div>
+            <h1 class="text-2xl font-black text-gray-900">GES Operasyon Raporu</h1>
+            <div class="text-gray-500 text-sm" id="raporBaslik"></div>
+          </div>
+        </div>
+      </div>
+      <div class="text-right text-sm text-gray-400">
+        <div>Oluşturma tarihi</div>
+        <div class="font-semibold text-gray-700" id="olusturmaTarihi"></div>
+      </div>
+    </div>
+
+    <!-- Genel KPI kartları -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-gray-50 rounded-xl p-4 text-center">
+        <div class="text-3xl font-black text-gray-800" id="kpi-toplamCalisan">—</div>
+        <div class="text-xs text-gray-500 mt-1 font-semibold uppercase tracking-wide">Toplam Adam·Gün</div>
+      </div>
+      <div class="bg-yellow-50 rounded-xl p-4 text-center">
+        <div class="text-3xl font-black text-yellow-700" id="kpi-aktifGun">—</div>
+        <div class="text-xs text-yellow-600 mt-1 font-semibold uppercase tracking-wide">Aktif Gün</div>
+      </div>
+      <div class="bg-blue-50 rounded-xl p-4 text-center">
+        <div class="text-3xl font-black text-blue-700" id="kpi-toplamKayit">—</div>
+        <div class="text-xs text-blue-600 mt-1 font-semibold uppercase tracking-wide">Toplam Kayıt</div>
+      </div>
+      <div class="bg-orange-50 rounded-xl p-4 text-center">
+        <div class="text-3xl font-black text-orange-700" id="kpi-aktifSps">—</div>
+        <div class="text-xs text-orange-600 mt-1 font-semibold uppercase tracking-wide">Aktif SPS Alanı</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Günlük çalışan tablosu -->
+  <div class="bg-white rounded-xl shadow-sm p-6 print-shadow">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">📅 Günlük Çalışan Özeti</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b-2 border-gray-200">
+          <th class="text-left py-2 text-gray-600 font-semibold">Tarih</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">⚡ Elektrik</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">⚙️ Mekanik</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">🏗️ Altyapı</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">🔲 Panel</th>
+          <th class="text-right py-2 text-gray-800 font-bold">Toplam</th>
+          <th class="text-center py-2 text-gray-600 font-semibold">Yoğunluk</th>
+        </tr>
+      </thead>
+      <tbody id="gunlukTablo"></tbody>
+    </table>
+  </div>
+
+  <!-- Uzman bazlı özet -->
+  <div class="bg-white rounded-xl shadow-sm p-6 print-shadow">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">👷 Uzman Bazlı Faaliyet Özeti</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b-2 border-gray-200">
+          <th class="text-left py-2 text-gray-600 font-semibold">Uzman</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">Kayıt Sayısı</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">Toplam Adam·Gün</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">Aktif Gün</th>
+          <th class="text-left py-2 text-gray-600 font-semibold">En Yoğun SPS</th>
+        </tr>
+      </thead>
+      <tbody id="uzmanTablo"></tbody>
+    </table>
+  </div>
+
+  <!-- SPS bazlı özet -->
+  <div class="bg-white rounded-xl shadow-sm p-6 print-shadow">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">📍 SPS Alan Özeti (En Yoğun 20)</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b-2 border-gray-200">
+          <th class="text-left py-2 text-gray-600 font-semibold">SPS</th>
+          <th class="text-left py-2 text-gray-600 font-semibold">Baskın Birim</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">Toplam Adam·Gün</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">Aktif Gün</th>
+          <th class="text-right py-2 text-gray-600 font-semibold">Maks. Günlük</th>
+        </tr>
+      </thead>
+      <tbody id="spsTablo"></tbody>
+    </table>
+  </div>
+
+  <!-- İSG Faaliyetleri -->
+  <div class="bg-white rounded-xl shadow-sm p-6 print-shadow sayfa-kir">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">🦺 İSG Faaliyet Özeti</h2>
+    <div class="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6" id="isgKartlar"></div>
+
+    <h3 class="font-semibold text-gray-700 mb-3">Açık / Devam Eden Uygunsuzluklar</h3>
+    <div id="uygunsuzlukListesi" class="space-y-2 text-sm"></div>
+  </div>
+
+  <!-- Birim dağılımı -->
+  <div class="bg-white rounded-xl shadow-sm p-6 print-shadow">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">📊 Birim İş Gücü Dağılımı</h2>
+    <div id="birimDagilim" class="space-y-3"></div>
+  </div>
+
+  <!-- Rapor altbilgisi -->
+  <div class="bg-gray-50 rounded-xl p-4 text-center text-xs text-gray-400 print-shadow">
+    Bu rapor GES Operasyon Sistemi tarafından otomatik oluşturulmuştur.
+    <span id="altbilgiTarih"></span>
+  </div>
+
+</div>
+
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const BIRIM_ETIKET = { elektrik:'Elektrik', mekanik:'Mekanik', altyapi:'Altyapı', panel:'Panel', diger:'Diğer' };
+  const TIP_ETIKET = {
+    toolbox:'📋 Toolbox', denetim:'🔍 Denetim', uygunsuzluk:'⚠️ Uygunsuzluk',
+    ramak_kala:'💥 Ramak Kala', tutanak:'📄 Tutanak', is_durdurma:'🛑 İş Durdurma',
+    kkd_kontrol:'🪖 KKD', vinc_denetim:'🏗️ Vinç', iskele_denetim:'🪜 İskele',
+    toplanti:'🤝 Toplantı', diger:'➕ Diğer'
+  };
+
+  // Sayfa açılışında tarihleri doldur (bu ay)
+  window.onload = () => {
+    const { data: { session } } = sb.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { window.location.href = 'index.html'; }
+    });
+
+    const bugun = new Date();
+    const ayBasi = new Date(bugun.getFullYear(), bugun.getMonth(), 1);
+    document.getElementById('baslangic').value = ayBasi.toISOString().split('T')[0];
+    document.getElementById('bitis').value     = bugun.toISOString().split('T')[0];
+  };
+
+  async function raporOlustur() {
+    const bas     = document.getElementById('baslangic').value;
+    const bit     = document.getElementById('bitis').value;
+    const santiye = document.getElementById('santiye').value;
+
+    if (!bas || !bit) { alert('Lütfen tarih aralığı seçin.'); return; }
+
+    document.getElementById('yukleniyor').classList.remove('hidden');
+    document.getElementById('raporIcerik').classList.add('hidden');
+
+    // Verileri çek
+    const [kayitlarRes, faaliyetlerRes, uzmanlarRes] = await Promise.all([
+      sb.from('kayitlar').select('*')
+        .eq('santiye', santiye).eq('aktif', true)
+        .gte('tarih', bas).lte('tarih', bit)
+        .order('tarih', { ascending: true }),
+      sb.from('faaliyetler').select('*')
+        .eq('santiye', santiye).eq('aktif', true)
+        .gte('tarih', bas).lte('tarih', bit),
+      sb.from('uzmanlar').select('id, ad_soyad')
+    ]);
+
+    const kayitlar    = kayitlarRes.data || [];
+    const faaliyetler = faaliyetlerRes.data || [];
+    const uzmanMap    = {};
+    (uzmanlarRes.data || []).forEach(u => { uzmanMap[u.id] = u.ad_soyad; });
+
+    // Kapak
+    document.getElementById('raporBaslik').textContent =
+      `${santiye} · ${bas} – ${bit}`;
+    document.getElementById('olusturmaTarihi').textContent =
+      new Date().toLocaleDateString('tr-TR', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('altbilgiTarih').textContent =
+      ' · ' + new Date().toLocaleString('tr-TR');
+
+    // KPI
+    const gunler    = [...new Set(kayitlar.map(k => k.tarih))];
+    const spsList   = [...new Set(kayitlar.map(k => k.sps_kodu))];
+    const toplamAG  = kayitlar.reduce((s, k) => s + k.calisan_sayisi, 0);
+    document.getElementById('kpi-toplamCalisan').textContent = toplamAG;
+    document.getElementById('kpi-aktifGun').textContent      = gunler.length;
+    document.getElementById('kpi-toplamKayit').textContent   = kayitlar.length;
+    document.getElementById('kpi-aktifSps').textContent      = spsList.length;
+
+    // Günlük tablo
+    const gunSps = {};
+    kayitlar.forEach(k => {
+      if (!gunSps[k.tarih]) gunSps[k.tarih] = {};
+      if (!gunSps[k.tarih][k.sps_kodu] || k.calisan_sayisi > (gunSps[k.tarih][k.sps_kodu]?.calisan_sayisi || 0))
+        gunSps[k.tarih][k.sps_kodu] = k;
+    });
+
+    const maks = Math.max(...Object.values(gunSps).map(g =>
+      Object.values(g).reduce((s,k) => s + k.calisan_sayisi, 0)), 1);
+
+    document.getElementById('gunlukTablo').innerHTML =
+      Object.entries(gunSps).map(([tarih, spsMap]) => {
+        const birimToplam = { elektrik:0, mekanik:0, altyapi:0, panel:0 };
+        Object.values(spsMap).forEach(k => {
+          if (birimToplam[k.birim] !== undefined) birimToplam[k.birim] += k.calisan_sayisi;
+        });
+        const toplam = Object.values(birimToplam).reduce((s,v) => s+v, 0);
+        const bar = Math.round(toplam / maks * 100);
+        return `<tr class="border-b border-gray-100 hover:bg-gray-50">
+          <td class="py-2 font-medium text-gray-700">${new Date(tarih+'T12:00:00').toLocaleDateString('tr-TR', { weekday:'short', day:'numeric', month:'short' })}</td>
+          <td class="py-2 text-right text-yellow-700">${birimToplam.elektrik || '–'}</td>
+          <td class="py-2 text-right text-blue-700">${birimToplam.mekanik || '–'}</td>
+          <td class="py-2 text-right text-orange-700">${birimToplam.altyapi || '–'}</td>
+          <td class="py-2 text-right text-purple-700">${birimToplam.panel || '–'}</td>
+          <td class="py-2 text-right font-bold text-gray-800">${toplam}</td>
+          <td class="py-2 px-2">
+            <div class="w-full bg-gray-100 rounded h-4">
+              <div class="bg-yellow-400 h-4 rounded" style="width:${bar}%"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+    // Uzman tablosu
+    const uzmanStat = {};
+    kayitlar.forEach(k => {
+      if (!uzmanStat[k.uzman_id]) uzmanStat[k.uzman_id] = { kayit:0, adamGun:0, gunler:new Set(), spsler:{} };
+      uzmanStat[k.uzman_id].kayit++;
+      uzmanStat[k.uzman_id].adamGun += k.calisan_sayisi;
+      uzmanStat[k.uzman_id].gunler.add(k.tarih);
+      if (!uzmanStat[k.uzman_id].spsler[k.sps_kodu]) uzmanStat[k.uzman_id].spsler[k.sps_kodu] = 0;
+      uzmanStat[k.uzman_id].spsler[k.sps_kodu] += k.calisan_sayisi;
+    });
+
+    document.getElementById('uzmanTablo').innerHTML =
+      Object.entries(uzmanStat)
+        .sort((a,b) => b[1].adamGun - a[1].adamGun)
+        .map(([uid, d]) => {
+          const enYogun = Object.entries(d.spsler).sort((a,b) => b[1]-a[1])[0];
+          return `<tr class="border-b border-gray-100">
+            <td class="py-2 font-semibold text-gray-800">${uzmanMap[uid] || '—'}</td>
+            <td class="py-2 text-right text-gray-600">${d.kayit}</td>
+            <td class="py-2 text-right font-bold text-gray-800">${d.adamGun}</td>
+            <td class="py-2 text-right text-gray-600">${d.gunler.size}</td>
+            <td class="py-2 text-gray-600">${enYogun ? enYogun[0] + ' (' + enYogun[1] + ' kişi)' : '—'}</td>
+          </tr>`;
+        }).join('');
+
+    // SPS tablosu
+    const spsStat = {};
+    kayitlar.forEach(k => {
+      if (!spsStat[k.sps_kodu]) spsStat[k.sps_kodu] = { toplam:0, gunler:new Set(), birimler:{}, maks:0 };
+      spsStat[k.sps_kodu].toplam += k.calisan_sayisi;
+      spsStat[k.sps_kodu].gunler.add(k.tarih);
+      spsStat[k.sps_kodu].maks = Math.max(spsStat[k.sps_kodu].maks, k.calisan_sayisi);
+      if (!spsStat[k.sps_kodu].birimler[k.birim]) spsStat[k.sps_kodu].birimler[k.birim] = 0;
+      spsStat[k.sps_kodu].birimler[k.birim] += k.calisan_sayisi;
+    });
+
+    document.getElementById('spsTablo').innerHTML =
+      Object.entries(spsStat)
+        .sort((a,b) => b[1].toplam - a[1].toplam)
+        .slice(0, 20)
+        .map(([sps, d]) => {
+          const baskın = Object.entries(d.birimler).sort((a,b) => b[1]-a[1])[0];
+          return `<tr class="border-b border-gray-100">
+            <td class="py-2 font-bold text-gray-800">${sps}</td>
+            <td class="py-2 text-gray-600">${baskın ? (BIRIM_ETIKET[baskın[0]]||baskın[0]) : '—'}</td>
+            <td class="py-2 text-right font-bold text-gray-800">${d.toplam}</td>
+            <td class="py-2 text-right text-gray-600">${d.gunler.size}</td>
+            <td class="py-2 text-right text-gray-600">${d.maks}</td>
+          </tr>`;
+        }).join('');
+
+    // İSG
+    const tipSayilari = {};
+    faaliyetler.forEach(f => { tipSayilari[f.faaliyet_tipi] = (tipSayilari[f.faaliyet_tipi]||0)+1; });
+    const isgTipler = ['toolbox','denetim','uygunsuzluk','ramak_kala','is_durdurma','tutanak'];
+    document.getElementById('isgKartlar').innerHTML = isgTipler.map(t => `
+      <div class="bg-gray-50 rounded-lg p-3 text-center">
+        <div class="text-2xl font-black text-gray-800">${tipSayilari[t]||0}</div>
+        <div class="text-xs text-gray-500 mt-0.5">${TIP_ETIKET[t]||t}</div>
+      </div>
+    `).join('');
+
+    const acikUyg = faaliyetler.filter(f =>
+      ['uygunsuzluk','ramak_kala','is_durdurma'].includes(f.faaliyet_tipi) && f.durum !== 'kapali'
+    );
+    document.getElementById('uygunsuzlukListesi').innerHTML = acikUyg.length === 0
+      ? '<div class="text-green-600 font-semibold">✅ Açık uygunsuzluk bulunmuyor</div>'
+      : acikUyg.map(f => `
+          <div class="flex items-start gap-3 border border-gray-200 rounded-lg p-3">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-${f.oncelik==='kritik'?'red':f.oncelik==='yuksek'?'orange':'gray'}-100 text-${f.oncelik==='kritik'?'red':f.oncelik==='yuksek'?'orange':'gray'}-700 shrink-0">${f.oncelik||'normal'}</span>
+            <div class="flex-1">
+              <div class="font-semibold text-sm text-gray-800">${TIP_ETIKET[f.faaliyet_tipi]||f.faaliyet_tipi} ${f.sps_kodu ? '· '+f.sps_kodu : ''}</div>
+              <div class="text-xs text-gray-500 mt-0.5">${f.aciklama||'—'}</div>
+              <div class="text-xs text-gray-400 mt-0.5">${uzmanMap[f.uzman_id]||'—'} · ${f.tarih}</div>
+            </div>
+          </div>`).join('');
+
+    // Birim dağılımı
+    const birimToplam2 = { elektrik:0, mekanik:0, altyapi:0, panel:0, diger:0 };
+    kayitlar.forEach(k => { if (birimToplam2[k.birim]!==undefined) birimToplam2[k.birim] += k.calisan_sayisi; });
+    const bt = Object.values(birimToplam2).reduce((s,v) => s+v, 0) || 1;
+    const birimRenkler = { elektrik:'bg-yellow-400', mekanik:'bg-blue-400', altyapi:'bg-orange-400', panel:'bg-purple-400', diger:'bg-gray-400' };
+    document.getElementById('birimDagilim').innerHTML = Object.entries(birimToplam2)
+      .filter(([,v]) => v > 0)
+      .sort((a,b) => b[1]-a[1])
+      .map(([b, v]) => `
+        <div class="flex items-center gap-3">
+          <div class="w-24 text-sm font-medium text-gray-700">${BIRIM_ETIKET[b]||b}</div>
+          <div class="flex-1 bg-gray-100 rounded-full h-8 overflow-hidden">
+            <div class="${birimRenkler[b]||'bg-gray-400'} h-full rounded-full flex items-center px-3" style="width:${Math.max(3,v/bt*100)}%">
+              <span class="text-xs font-bold text-gray-800">${v} kişi</span>
+            </div>
+          </div>
+          <div class="text-sm text-gray-500 w-10 text-right">${Math.round(v/bt*100)}%</div>
+        </div>`).join('');
+
+    document.getElementById('yukleniyor').classList.add('hidden');
+    document.getElementById('raporIcerik').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

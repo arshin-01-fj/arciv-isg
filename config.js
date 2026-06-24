@@ -1,0 +1,6 @@
+const SUPABASE_URL = "https://oafdmksawrnppeoavkfl.supabase.co";
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hZmRta3Nhd3JucHBlb2F2a2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDIwODMsImV4cCI6MjA5Nzc3ODA4M30.Mhf_Y1-0E7RsLWvgEBc0MwOols1st5NcyQOZFklZJR0';
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const GEMINI_API_KEY = "AQ.Ab8RN6Ijk0y-ztI-bxINPYTvXABCTH8EVD-DEFOaL9HPimVlMQ";

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Arıkan İSG — Rapor Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white p-6 rounded-xl shadow mb-6">
+      <h1 class="text-2xl font-bold text-[#003366]">Hoşgeldin, <span id="kullaniciAdi"></span></h1>
+      <p class="text-gray-500">Rapor geçmişin aşağıdadır.</p>
+    </div>
+
+    <div id="raporListesi" class="space-y-4">
+      <p class="text-center text-gray-500">Raporlar yükleniyor...</p>
+    </div>
+  </div>
+
+  <script>
+    window.onload = async () => {
+      const pAdi = localStorage.getItem('ad_soyad');
+      const pId = localStorage.getItem('kullanici_id');
+      document.getElementById('kullaniciAdi').textContent = pAdi;
+
+      // Veritabanından sadece bu personelin raporlarını çek
+      const { data, error } = await db
+        .from('raporlar')
+        .select('*')
+        .eq('personel_id', pId) 
+        .order('olusturulma_tarihi', { ascending: false });
+
+      if (error) {
+        alert("Veri yüklenemedi: " + error.message);
+        return;
+      }
+
+      const liste = document.getElementById('raporListesi');
+      liste.innerHTML = '';
+      
+      data.forEach(r => {
+        // Tarih ve Saati okunabilir formatta yazdırıyoruz
+        const tarih = new Date(r.olusturulma_tarihi).toLocaleString('tr-TR');
+        
+        liste.innerHTML += `
+          <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-900">
+            <div class="flex justify-between">
+              <span class="font-bold text-blue-900 text-sm">${tarih}</span>
+            </div>
+            <p class="text-gray-700 mt-2">${r.rapor_metni}</p>
+            <p class="text-xs text-gray-400 mt-2">Konum: ${r.gps_enlem}, ${r.gps_boylam}</p>
+          </div>
+        `;
+      });
+    };
+  </script>
+</body>
+</html>

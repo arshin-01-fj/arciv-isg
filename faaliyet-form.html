@@ -1,0 +1,461 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GES — İSG Faaliyet Gir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="gps.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50">
+
+  <!-- Üst bar -->
+  <div class="bg-orange-500 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🦺</span>
+      <span class="font-bold text-white">İSG Faaliyet Kaydı</span>
+    </div>
+    <div class="flex gap-3 items-center">
+      <a href="form.html"      class="text-orange-100 text-sm">👷 Operasyon</a>
+      <a href="dashboard.html" class="text-orange-100 text-sm hidden" id="dashLink">📊 Dashboard</a>
+      <button onclick="cikisYap()" class="text-orange-200 text-sm">Çıkış</button>
+    </div>
+  </div>
+
+  <div id="anaIcerik" class="hidden max-w-lg mx-auto p-4">
+
+    <!-- Kullanıcı -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center gap-3">
+      <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-lg">🦺</div>
+      <div>
+        <div class="font-semibold text-gray-800" id="uzmanAdGoster"></div>
+        <div class="text-xs text-gray-500" id="tarihSaat"></div>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="bg-white rounded-xl shadow-sm p-5">
+      <h2 class="text-lg font-bold text-gray-800 mb-5">Yeni İSG Faaliyeti</h2>
+
+      <!-- Faaliyet Tipi -->
+      <div class="mb-5">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Faaliyet Tipi *</label>
+        <div class="grid grid-cols-2 gap-2" id="tipButonlar">
+          <!-- JS tarafından doldurulur -->
+        </div>
+        <input type="hidden" id="secilenTip">
+      </div>
+
+      <!-- SPS (isteğe bağlı) -->
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Çalışma Alanı
+          <span class="text-gray-400 font-normal text-xs">(tüm saha ise boş bırakın)</span>
+        </label>
+        <select id="spsSecim" class="w-full border border-gray-300 rounded-lg px-3 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+          <option value="">— Tüm saha / belirtilmemiş —</option>
+        </select>
+      </div>
+
+      <!-- Şantiye -->
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Şantiye</label>
+        <select id="santiyeSecim" class="w-full border border-gray-300 rounded-lg px-3 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+          <option value="GES-1">GES-1 (Ana Saha)</option>
+        </select>
+      </div>
+
+      <!-- Katılımcı sayısı (sadece Toolbox ve Toplantı için göster) -->
+      <div class="mb-4" id="katilimciAlan">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Katılımcı Sayısı</label>
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="katilimciDegistir(-5)" class="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-bold text-gray-600 transition">−5</button>
+          <button type="button" onclick="katilimciDegistir(-1)" class="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg text-2xl font-bold text-gray-700 transition">−</button>
+          <input id="katilimciSayisi" type="number" min="0" max="500" value="0"
+            class="flex-1 text-center text-3xl font-bold border-2 border-gray-200 rounded-lg py-2 focus:outline-none focus:border-orange-400">
+          <button type="button" onclick="katilimciDegistir(1)"  class="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg text-2xl font-bold text-gray-700 transition">+</button>
+          <button type="button" onclick="katilimciDegistir(5)"  class="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-bold text-gray-600 transition">+5</button>
+        </div>
+      </div>
+
+      <!-- Öncelik (Uygunsuzluk, Ramak Kala, İş Durdurma için) -->
+      <div class="mb-4 hidden" id="oncelikAlan">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Öncelik / Ciddiyet</label>
+        <div class="grid grid-cols-4 gap-2">
+          <button type="button" onclick="oncelikSec(this,'dusuk')"    class="onc-btn border-2 border-gray-200 rounded-lg py-2 text-xs font-semibold text-gray-600 hover:border-green-400 transition">🟢 Düşük</button>
+          <button type="button" onclick="oncelikSec(this,'normal')"   class="onc-btn border-2 border-gray-200 rounded-lg py-2 text-xs font-semibold text-gray-600 hover:border-yellow-400 transition">🟡 Normal</button>
+          <button type="button" onclick="oncelikSec(this,'yuksek')"  class="onc-btn border-2 border-gray-200 rounded-lg py-2 text-xs font-semibold text-gray-600 hover:border-orange-400 transition">🟠 Yüksek</button>
+          <button type="button" onclick="oncelikSec(this,'kritik')"   class="onc-btn border-2 border-gray-200 rounded-lg py-2 text-xs font-semibold text-gray-600 hover:border-red-500 transition">🔴 Kritik</button>
+        </div>
+        <input type="hidden" id="secilenOncelik" value="normal">
+      </div>
+
+      <!-- Açıklama -->
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Açıklama *
+          <span class="text-gray-400 font-normal text-xs">(ne yapıldı, ne bulundu?)</span>
+        </label>
+        <textarea id="aciklama" rows="3" placeholder="Örn: Elektrik montajı öncesi topraklama ve elektrik çarpması riskleri anlatıldı."
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
+      </div>
+
+      <!-- Fotoğraf -->
+      <div class="mb-6">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Fotoğraf
+          <span class="text-gray-400 font-normal text-xs">(isteğe bağlı, maks. 5)</span>
+        </label>
+        <div id="fotografOnizleme" class="flex gap-2 flex-wrap mb-2"></div>
+        <label class="flex items-center gap-2 border-2 border-dashed border-gray-300 hover:border-orange-400 rounded-lg p-3 cursor-pointer transition">
+          <span class="text-2xl">📷</span>
+          <span class="text-sm text-gray-500">Fotoğraf seç veya çek</span>
+          <input type="file" id="fotografInput" accept="image/*" multiple class="hidden" onchange="fotografSec(this)">
+        </label>
+        <div id="yuklemeDurumu" class="text-xs text-gray-400 mt-1 hidden">Yükleniyor...</div>
+      </div>
+
+      <!-- GPS Konum -->
+      <div class="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-semibold text-gray-700">📍 GPS Konum <span class="text-red-500">*</span></div>
+          <button type="button" id="konumBtn" onclick="konumYenile()"
+            class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-lg transition">
+            📍 Konum Al
+          </button>
+        </div>
+        <div class="text-sm" id="konumDurum">⏳ Bekleniyor</div>
+        <div class="text-xs text-gray-500 mt-0.5" id="konumDogruluk"></div>
+      </div>
+
+      <!-- Gönder -->
+      <button onclick="kayitGonder()" id="gonderBtn"
+        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-lg transition active:scale-95">
+        ✅ Faaliyet Kaydet
+      </button>
+
+      <div id="sonucMesaj" class="hidden mt-4 text-center text-sm font-medium"></div>
+    </div>
+
+    <!-- Bugünkü faaliyetler -->
+    <div class="mt-4 bg-white rounded-xl shadow-sm p-5">
+      <h3 class="font-bold text-gray-700 mb-3">Bugünkü Faaliyetlerim</h3>
+      <div id="sonFaaliyetler" class="space-y-2 text-sm text-gray-600">
+        <div class="text-gray-400 text-center py-2">Yükleniyor...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let mevcutUzman = null;
+    let yuklenenFotograflar = [];
+
+    const FAALİYET_TIPLERI = [
+      { deger: 'toolbox',        etiket: '📋 Toolbox',         renk: 'hover:border-blue-400'   },
+      { deger: 'denetim',        etiket: '🔍 Saha Denetimi',   renk: 'hover:border-green-400'  },
+      { deger: 'uygunsuzluk',    etiket: '⚠️ Uygunsuzluk',    renk: 'hover:border-orange-400' },
+      { deger: 'ramak_kala',     etiket: '💥 Ramak Kala',      renk: 'hover:border-red-400'    },
+      { deger: 'tutanak',        etiket: '📄 Tutanak',          renk: 'hover:border-purple-400' },
+      { deger: 'is_durdurma',    etiket: '🛑 İş Durdurma',     renk: 'hover:border-red-600'    },
+      { deger: 'kkd_kontrol',    etiket: '🪖 KKD Kontrolü',    renk: 'hover:border-yellow-400' },
+      { deger: 'vinc_denetim',   etiket: '🏗️ Vinç Denetimi',  renk: 'hover:border-gray-400'   },
+      { deger: 'iskele_denetim', etiket: '🪜 İskele Denetimi', renk: 'hover:border-gray-400'   },
+      { deger: 'toplanti',       etiket: '🤝 Toplantı',         renk: 'hover:border-teal-400'   },
+      { deger: 'diger',          etiket: '➕ Diğer',            renk: 'hover:border-gray-300'   },
+    ];
+
+    // Katılımcı sayısı göster/gizle
+    const KATILIMCI_TIPPLER = ['toolbox','toplanti'];
+    // Öncelik göster/gizle
+    const ONCELIK_TIPLERI   = ['uygunsuzluk','ramak_kala','is_durdurma','tutanak'];
+
+    async function baslat() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return; }
+
+      const { data: uzman } = await sb
+        .from('uzmanlar').select('id,ad_soyad,rol,aktif').eq('id', session.user.id).single();
+
+      if (!uzman || !uzman.aktif) { window.location.href = 'index.html'; return; }
+      mevcutUzman = uzman;
+
+      if (['yonetici','admin'].includes(uzman.rol))
+        document.getElementById('dashLink').classList.remove('hidden');
+
+      document.getElementById('anaIcerik').classList.remove('hidden');
+      document.getElementById('uzmanAdGoster').textContent = uzman.ad_soyad;
+
+      function saatiGuncelle() {
+        const now = new Date();
+        document.getElementById('tarihSaat').textContent =
+          now.toLocaleDateString('tr-TR') + ' · ' + now.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+      }
+      saatiGuncelle();
+      setInterval(saatiGuncelle, 10000);
+
+      tipButonlariniOlustur();
+      spsDoldur();
+      sonFaaliyetleriYukle();
+
+      // Sayfa açılınca otomatik GPS al
+      konumYenile();
+    }
+
+    async function konumYenile() {
+      try {
+        await GPS.baslat('konumDurum', 'konumDogruluk', 'konumBtn');
+      } catch (_) { /* hata GPS.baslat içinde gösterildi */ }
+    }
+
+    function tipButonlariniOlustur() {
+      const kap = document.getElementById('tipButonlar');
+      kap.innerHTML = FAALİYET_TIPLERI.map(t => `
+        <button type="button"
+          onclick="tipSec(this,'${t.deger}')"
+          class="tip-btn border-2 border-gray-200 rounded-lg py-3 px-2 text-sm font-medium text-gray-700 ${t.renk} transition text-left">
+          ${t.etiket}
+        </button>
+      `).join('');
+    }
+
+    function spsDoldur() {
+      const select = document.getElementById('spsSecim');
+      for (let i = 1; i <= 96; i++) {
+        const opt = document.createElement('option');
+        const kod = 'SPS-' + String(i).padStart(2,'0');
+        opt.value = kod;
+        opt.textContent = kod;
+        select.appendChild(opt);
+      }
+    }
+
+    function tipSec(el, tip) {
+      document.querySelectorAll('.tip-btn').forEach(b => {
+        b.classList.remove('border-orange-500','bg-orange-50');
+        b.classList.add('border-gray-200');
+      });
+      el.classList.add('border-orange-500','bg-orange-50');
+      el.classList.remove('border-gray-200');
+      document.getElementById('secilenTip').value = tip;
+
+      // Katılımcı alanını göster/gizle
+      document.getElementById('katilimciAlan').classList.toggle('hidden', !KATILIMCI_TIPPLER.includes(tip));
+      // Öncelik alanını göster/gizle
+      document.getElementById('oncelikAlan').classList.toggle('hidden', !ONCELIK_TIPLERI.includes(tip));
+    }
+
+    function oncelikSec(el, onc) {
+      document.querySelectorAll('.onc-btn').forEach(b => {
+        b.classList.remove('border-orange-500','bg-orange-50');
+        b.classList.add('border-gray-200');
+      });
+      el.classList.add('border-orange-500','bg-orange-50');
+      el.classList.remove('border-gray-200');
+      document.getElementById('secilenOncelik').value = onc;
+    }
+
+    function katilimciDegistir(delta) {
+      const inp = document.getElementById('katilimciSayisi');
+      inp.value = Math.max(0, (parseInt(inp.value) || 0) + delta);
+    }
+
+    async function fotografSec(input) {
+      const dosyalar = Array.from(input.files).slice(0, 5);
+      if (dosyalar.length === 0) return;
+
+      const durumEl = document.getElementById('yuklemeDurumu');
+      durumEl.textContent = 'Yükleniyor...';
+      durumEl.classList.remove('hidden');
+
+      yuklenenFotograflar = [];
+      const onizleme = document.getElementById('fotografOnizleme');
+      onizleme.innerHTML = '';
+
+      for (const dosya of dosyalar) {
+        // Path olarak sakla, public URL değil — bucket PRIVATE
+        const path = `fotograflar/${mevcutUzman.id}/${Date.now()}-${dosya.name.replace(/[^a-zA-Z0-9.]/g,'_')}`;
+        const { data, error } = await sb.storage
+          .from('faaliyetler')
+          .upload(path, dosya, { upsert: false });
+
+        if (!error && data) {
+          yuklenenFotograflar.push(data.path);   // path sakla, URL değil
+
+          // Önizleme için geçici signed URL (60 sn — sadece form açıkken görünür)
+          const { data: signed } = await sb.storage
+            .from('faaliyetler').createSignedUrl(data.path, 60);
+
+          const img = document.createElement('div');
+          img.className = 'w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 shrink-0';
+          img.innerHTML = signed?.signedUrl
+            ? `<img src="${signed.signedUrl}" class="w-full h-full object-cover">`
+            : `<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">✓</div>`;
+          onizleme.appendChild(img);
+        } else {
+          durumEl.textContent = `Yükleme hatası: ${error?.message}`;
+        }
+      }
+
+      const sayi = yuklenenFotograflar.length;
+      durumEl.textContent = sayi > 0
+        ? `${sayi} fotoğraf yüklendi ✓ (private)`
+        : 'Yükleme başarısız';
+    }
+
+    async function kayitGonder() {
+      const tip      = document.getElementById('secilenTip').value;
+      const aciklama = document.getElementById('aciklama').value.trim();
+      const spsKodu  = document.getElementById('spsSecim').value || null;
+      const santiye  = document.getElementById('santiyeSecim').value;
+      const katilimci = parseInt(document.getElementById('katilimciSayisi').value) || null;
+      const oncelik  = document.getElementById('secilenOncelik').value || 'normal';
+
+      // Tip bazlı zorunlu alan validasyonu
+      if (!tip) { hataGoster('Lütfen faaliyet tipi seçin.'); return; }
+
+      if (KATILIMCI_TIPPLER.includes(tip)) {
+        const k = parseInt(document.getElementById('katilimciSayisi').value) || 0;
+        if (k === 0) { hataGoster('Toolbox/Toplantı için katılımcı sayısı girilmeli.'); return; }
+      }
+
+      if (ONCELIK_TIPLERI.includes(tip)) {
+        if (!aciklama) { hataGoster('Uygunsuzluk/Ramak Kala/İş Durdurma için açıklama zorunludur.'); return; }
+        const onc = document.getElementById('secilenOncelik').value;
+        if (!onc)     { hataGoster('Lütfen öncelik/ciddiyet seviyesi seçin.'); return; }
+      } else {
+        if (!aciklama) { hataGoster('Lütfen açıklama girin.'); return; }
+      }
+
+      // GPS zorunlu
+      if (!GPS.veri) {
+        hataGoster('📍 Konum alınıyor...');
+        try { await konumYenile(); } catch (_) { return; }
+        if (!GPS.veri) {
+          hataGoster('❌ Konum izni verilmeden kayıt oluşturulamaz.');
+          return;
+        }
+      }
+
+      const btn = document.getElementById('gonderBtn');
+      btn.textContent = 'Kaydediliyor...';
+      btn.disabled = true;
+
+      const now = new Date();
+      const { error } = await sb.from('faaliyetler').insert({
+        uzman_id:           mevcutUzman.id,
+        santiye,
+        sps_kodu:           spsKodu,
+        faaliyet_tipi:      tip,
+        katilimci_sayisi:   KATILIMCI_TIPPLER.includes(tip) ? katilimci : null,
+        aciklama,
+        oncelik:            ONCELIK_TIPLERI.includes(tip) ? oncelik : null,
+        fotograflar:        yuklenenFotograflar,
+        tarih:              now.toISOString().split('T')[0],
+        saat:               now.toTimeString().slice(0,5),
+        // GPS
+        latitude:           GPS.veri?.latitude,
+        longitude:          GPS.veri?.longitude,
+        location_accuracy:  GPS.veri?.location_accuracy,
+        location_timestamp: GPS.veri?.location_timestamp
+      });
+
+      const mesajEl = document.getElementById('sonucMesaj');
+      if (error) {
+        mesajEl.textContent = '❌ Hata: ' + error.message;
+        mesajEl.className = 'mt-4 text-center text-sm font-medium text-red-600';
+      } else {
+        mesajEl.textContent = '✅ Faaliyet kaydedildi!';
+        mesajEl.className = 'mt-4 text-center text-sm font-medium text-green-600';
+        document.getElementById('secilenTip').value = '';
+        document.getElementById('aciklama').value = '';
+        document.getElementById('spsSecim').value = '';
+        document.getElementById('katilimciSayisi').value = 0;
+        document.querySelectorAll('.tip-btn').forEach(b => {
+          b.classList.remove('border-orange-500','bg-orange-50');
+          b.classList.add('border-gray-200');
+        });
+        yuklenenFotograflar = [];
+        document.getElementById('fotografOnizleme').innerHTML = '';
+        document.getElementById('yuklemeDurumu').classList.add('hidden');
+        sonFaaliyetleriYukle();
+      }
+
+      mesajEl.classList.remove('hidden');
+      setTimeout(() => {
+        mesajEl.classList.add('hidden');
+        btn.textContent = '✅ Faaliyet Kaydet';
+        btn.disabled = false;
+      }, 2500);
+    }
+
+    async function sonFaaliyetleriYukle() {
+      const bugun = new Date().toISOString().split('T')[0];
+      const { data } = await sb
+        .from('faaliyetler')
+        .select('faaliyet_tipi,sps_kodu,katilimci_sayisi,aciklama,saat,oncelik')
+        .eq('uzman_id', mevcutUzman.id)
+        .eq('tarih', bugun)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      const el = document.getElementById('sonFaaliyetler');
+      if (!data || data.length === 0) {
+        el.innerHTML = '<div class="text-gray-400 text-center py-2">Bugün faaliyet yok</div>';
+        return;
+      }
+
+      el.innerHTML = data.map(f => {
+        const tip = TIP_ETIKET[f.faaliyet_tipi] || f.faaliyet_tipi;
+        const onc = ONCELIK_RENK[f.oncelik] || '';
+        return `
+          <div class="flex items-start gap-2 border border-gray-100 rounded-lg px-3 py-2">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-gray-700 text-xs">${tip}</span>
+                ${f.sps_kodu ? `<span class="text-gray-400 text-xs">· ${f.sps_kodu}</span>` : ''}
+                ${f.oncelik && f.oncelik !== 'normal' ? `<span class="text-xs ${onc}">${f.oncelik}</span>` : ''}
+              </div>
+              <div class="text-gray-500 text-xs mt-0.5 truncate">${f.aciklama}</div>
+              ${f.katilimci_sayisi ? `<div class="text-gray-400 text-xs">${f.katilimci_sayisi} katılımcı</div>` : ''}
+            </div>
+            <div class="text-gray-400 text-xs shrink-0">${f.saat}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function hataGoster(mesaj) {
+      const el = document.getElementById('sonucMesaj');
+      el.textContent = '⚠️ ' + mesaj;
+      el.className = 'mt-4 text-center text-sm font-medium text-red-600';
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    const TIP_ETIKET = {
+      toolbox:'📋 Toolbox', denetim:'🔍 Denetim', uygunsuzluk:'⚠️ Uygunsuzluk',
+      ramak_kala:'💥 Ramak Kala', tutanak:'📄 Tutanak', is_durdurma:'🛑 İş Durdurma',
+      kkd_kontrol:'🪖 KKD', vinc_denetim:'🏗️ Vinç', iskele_denetim:'🪜 İskele',
+      toplanti:'🤝 Toplantı', diger:'➕ Diğer'
+    };
+
+    const ONCELIK_RENK = {
+      dusuk:'text-green-600', normal:'text-gray-500',
+      yuksek:'text-orange-600 font-semibold', kritik:'text-red-600 font-bold'
+    };
+
+    async function cikisYap() {
+      await sb.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    baslat();
+  </script>
+</body>
+</html>

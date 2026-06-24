@@ -1,0 +1,15 @@
+{
+  "name": "ArCiv İSG Sistemi",
+  "short_name": "ArCiv",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#003366",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2936/2936666.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
