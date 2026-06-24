@@ -33,7 +33,6 @@
       </div>
       <h2 class="text-2xl font-black tracking-widest text-white">ArCiv</h2>
       <p class="text-xs text-blue-300 font-medium tracking-wider mt-1">İŞLETİM SİSTEMİ</p>
-      
       <button onclick="toggleSidebar()" class="lg:hidden absolute top-0 right-0 text-blue-300 hover:text-white"><i class="fas fa-times text-xl"></i></button>
     </div>
     
@@ -44,6 +43,9 @@
       <button onclick="renderView('personel'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
         <i class="fas fa-users w-8 text-blue-400 group-hover:text-white transition"></i> Personel Zekası
       </button>
+      <button onclick="renderView('finans'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
+        <i class="fas fa-wallet w-8 text-blue-400 group-hover:text-white transition"></i> Finansal Zeka
+      </button>
     </nav>
     
     <button onclick="cikisYap()" class="w-full flex items-center text-left p-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-xl transition text-sm font-semibold mt-auto">
@@ -52,7 +54,6 @@
   </aside>
 
   <main class="flex-1 p-4 md:p-8 lg:p-10 h-screen overflow-y-auto w-full">
-    
     <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-200 gap-4">
       <div class="flex items-center gap-3">
         <button onclick="toggleSidebar()" class="lg:hidden bg-white p-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-sm">
@@ -66,7 +67,6 @@
         <span class="text-xs md:text-sm font-semibold text-slate-700 hidden sm:inline" id="adminIsim">Yönetici</span>
       </div>
     </div>
-
     <div id="contentArea" class="animate-fade-in"></div>
   </main>
 
@@ -82,8 +82,8 @@
           <select id="sorumluSecim" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></select>
         </div>
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">Yapılacak İşlem / Görev</label>
-          <textarea id="aksiyonMetni" class="w-full border border-slate-300 rounded-xl px-4 py-3 h-28 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" placeholder="Örn: Açıkta duran elektrik kabloları izole edilip toplanacak..."></textarea>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Yapılacak İşlem</label>
+          <textarea id="aksiyonMetni" class="w-full border border-slate-300 rounded-xl px-4 py-3 h-28 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></textarea>
         </div>
       </div>
       <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
@@ -93,13 +93,77 @@
     </div>
   </div>
 
+  <div id="finansModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+        <h3 id="finansModalBaslik" class="font-bold text-slate-800"><i class="fas fa-calculator text-blue-600 mr-2"></i> Finansal Kayıt Ekle/Düzenle</h3>
+        <button onclick="finansModalKapat()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <div class="p-6 space-y-3.5 overflow-y-auto max-h-[70vh]">
+        <div class="grid grid-cols-2 gap-3 border-b border-slate-100 pb-3 mb-1">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Kayıt Yılı</label>
+            <select id="finansModalYil" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Kayıt Ayı</label>
+            <select id="finansModalAy" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="Ocak">Ocak</option><option value="Şubat">Şubat</option><option value="Mart">Mart</option>
+              <option value="Nisan">Nisan</option><option value="Mayıs">Mayıs</option><option value="Haziran">Haziran</option>
+              <option value="Temmuz">Temmuz</option><option value="Ağustos">Ağustos</option><option value="Eylül">Eylül</option>
+              <option value="Ekim">Ekim</option><option value="Kasım">Kasım</option><option value="Aralık">Aralık</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">Personel Seçimi</label>
+          <select id="finansPersonelSecim" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Net Maaş (₺)</label>
+            <input type="number" id="finansNetMaas" oninput="otomatikBrutHesapla()" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">SGK Kesintisi (₺)</label>
+            <input type="number" id="finansSgkKesintisi" oninput="otomatikBrutHesapla()" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">Brüt Maaş (₺) <span class="text-xs font-normal text-blue-600">(Otomatik)</span></label>
+          <input type="number" id="finansBrutMaas" readonly class="w-full border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-100 text-slate-500 font-bold outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Çalışma Günü</label>
+            <input type="number" id="finansCalismaGunu" value="22" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">HT Günü</label>
+            <input type="number" id="finansHtGunu" value="8" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+          </div>
+        </div>
+      </div>
+      <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
+        <button onclick="finansModalKapat()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
+        <button id="finansKaydetBtn" onclick="finansKaydet()" class="px-5 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl font-bold shadow-md transition flex items-center gap-2">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    let riskChartIstance = null;
+    let riskChartInstance = null;
     let personelSozluk = {}; 
     let seciliRaporId = null; 
     let tumRaporlarData = [];
+    
+    // FİNANS DEĞİŞKENLERİ
+    let globalFinansMetni = "";
+    let duzenlenenFinansId = null; 
+    let aktifFinansData = []; 
 
-    // MOBİL MENÜ TETİKLEYİCİSİ
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');
@@ -130,7 +194,7 @@
       if(view === 'dashboard') {
         baslik.textContent = "Saha Operasyon Merkezi";
         area.innerHTML = `
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:grid-cols-4 gap-6 mb-8">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
             <div class="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 flex items-center gap-3 md:gap-4">
               <div class="w-10 h-10 md:w-14 md:h-14 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl"><i class="fas fa-file-alt"></i></div>
               <div><p class="text-slate-500 text-xs md:text-sm font-semibold">Toplam</p><p id="toplamRapor" class="text-xl md:text-3xl font-black text-slate-800">-</p></div>
@@ -148,19 +212,14 @@
               <div><p class="text-slate-500 text-xs md:text-sm font-semibold">Açık İşler</p><p id="acikAksiyonRapor" class="text-xl md:text-3xl font-black text-slate-800">-</p></div>
             </div>
           </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:grid-cols-1 lg:gap-8">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-fit">
               <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i class="fas fa-chart-pie text-blue-500"></i> Risk Analiz Dağılımı</h3>
-              <div class="relative h-56 w-full flex justify-center">
-                <canvas id="riskChart"></canvas>
-              </div>
+              <div class="relative h-56 w-full flex justify-center"><canvas id="riskChart"></canvas></div>
             </div>
-
             <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
               <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-stream text-blue-500"></i> Saha Bildirimleri</h3>
-                
                 <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
                   <div class="relative w-full sm:w-44">
                     <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
@@ -168,20 +227,14 @@
                   </div>
                   <div class="flex gap-2 w-full">
                     <select id="riskFiltresi" onchange="filtreleRaporlar()" class="w-1/2 sm:w-auto border border-slate-200 rounded-lg px-2 py-2 text-xs md:text-sm outline-none bg-slate-50 font-medium text-slate-600">
-                      <option value="TÜMÜ">Tüm Riskler</option>
-                      <option value="KRİTİK">⚠️ Kritik</option>
-                      <option value="ORTA">⚡ Orta</option>
-                      <option value="DÜŞÜK">✅ Düşük</option>
+                      <option value="TÜMÜ">Tüm Riskler</option><option value="KRİTİK">⚠️ Kritik</option><option value="ORTA">⚡ Orta</option><option value="DÜŞÜK">✅ Düşük</option>
                     </select>
                     <select id="durumFiltresi" onchange="filtreleRaporlar()" class="w-1/2 sm:w-auto border border-slate-200 rounded-lg px-2 py-2 text-xs md:text-sm outline-none bg-slate-50 font-medium text-slate-600">
-                      <option value="TÜMÜ">Tüm Durumlar</option>
-                      <option value="AÇIK">Bekleyen</option>
-                      <option value="ÇÖZÜLDÜ">Çözülenler</option>
+                      <option value="TÜMÜ">Tüm Durumlar</option><option value="AÇIK">Bekleyen</option><option value="ÇÖZÜLDÜ">Çözülenler</option>
                     </select>
                   </div>
                 </div>
               </div>
-              
               <div id="canliAkiş" class="space-y-4 overflow-y-auto pr-2 max-h-[500px] no-scrollbar"></div>
             </div>
           </div>
@@ -200,9 +253,81 @@
             </table>
           </div>`;
         personelleriGetir();
+
+      } else if (view === 'finans') {
+        baslik.textContent = "Finansal Zeka ve Maliyet Yönetimi";
+        const aylarTr = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        const guncelAy = aylarTr[new Date().getMonth()];
+        const guncelYil = new Date().getFullYear();
+
+        area.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden">
+              <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-money-bill-wave"></i></div>
+              <div><p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Toplam Net</p><p id="toplamNetMaas" class="text-2xl font-black text-slate-800">₺0</p></div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden">
+              <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-percentage"></i></div>
+              <div><p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Toplam SGK</p><p id="toplamSgkKesintisi" class="text-2xl font-black text-slate-800">₺0</p></div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden">
+              <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-chart-line"></i></div>
+              <div><p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Toplam Brüt</p><p id="toplamBrutMaliyet" class="text-2xl font-black text-blue-900">₺0</p></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2">
+                  <div class="bg-slate-100 p-1.5 rounded-xl flex gap-1 border border-slate-200 shadow-inner">
+                    <select id="filtreYil" onchange="finansVerileriniYukle()" class="bg-transparent font-bold text-slate-700 outline-none text-sm px-2 cursor-pointer">
+                      <option value="2025" ${guncelYil == 2025 ? 'selected' : ''}>2025</option>
+                      <option value="2026" ${guncelYil == 2026 ? 'selected' : ''}>2026</option>
+                      <option value="2027" ${guncelYil == 2027 ? 'selected' : ''}>2027</option>
+                    </select>
+                    <span class="text-slate-300">|</span>
+                    <select id="filtreAy" onchange="finansVerileriniYukle()" class="bg-transparent font-bold text-blue-800 outline-none text-sm px-2 cursor-pointer">
+                      <option value="TÜMÜ">Tüm Aylar</option>
+                      ${aylarTr.map(ay => `<option value="${ay}" ${ay === guncelAy ? 'selected' : ''}>${ay}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+                <button onclick="finansModalAc(null)" class="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Kayıt Ekle</button>
+              </div>
+              <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full text-left border-collapse min-w-[650px]">
+                  <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
+                    <tr><th class="p-4">Personel</th><th class="p-4">Dönem</th><th class="p-4">Çalışma/HT</th><th class="p-4">Net</th><th class="p-4">SGK</th><th class="p-4">Brüt</th><th class="p-4 text-center">İşlem</th></tr>
+                  </thead>
+                  <tbody id="finansTableBody" class="divide-y divide-slate-100 text-xs md:text-sm">
+                    <tr><td colspan="7" class="p-10 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Yükleniyor...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-fit flex flex-col">
+              <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fas fa-brain text-indigo-600"></i> AI Finans Analisti</h3>
+              <div class="mb-5">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Özel Analiz İsteği (Opsiyonel)</label>
+                <textarea id="aiFinansKomut" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50" placeholder="Örn: Sadece SGK kesintilerini veya fazla mesaileri analiz et..."></textarea>
+              </div>
+              <button id="aiFinansBtn" onclick="calistirFinansAI()" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-bold py-3.5 rounded-2xl shadow-md transition flex items-center justify-center gap-2"><i class="fas fa-analytics"></i> AI Raporu Üret</button>
+              <div id="aiFinansSonucAlani" class="hidden mt-6 text-left">
+                 <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 relative">
+                   <div class="absolute -top-3 left-6 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fas fa-sparkles mr-1"></i> ArCiv Makro AI</div>
+                   <div id="finansAnalizYazisi" class="text-xs md:text-sm text-slate-800 space-y-3 leading-relaxed mt-2"></div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        `;
+        finansVerileriniYukle();
       }
     }
 
+    // --- DASHBOARD (SAHA BİLDİRİMLERİ & GRAFİK) FONKSİYONLARI ---
     async function verileriYukle() {
       const { data: raporlar } = await db.from('raporlar').select('*, personel(ad_soyad, santiye), aksiyonlar(*)').order('olusturulma_tarihi', {ascending: false});
       if (raporlar) {
@@ -255,8 +380,8 @@
 
     function cizGrafik(kritik, orta, dusuk) {
       const ctx = document.getElementById('riskChart').getContext('2d');
-      if(riskChartIstance) riskChartIstance.destroy(); 
-      riskChartIstance = new Chart(ctx, {
+      if(riskChartInstance) riskChartInstance.destroy(); 
+      riskChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
           labels: ['Kritik', 'Orta', 'Güvenli'],
@@ -327,21 +452,43 @@
       `;
     }
 
-    // --- PERSONEL METODLARI ---
+    // --- AKSİYON FONKSİYONLARI ---
+    function aksiyonModalAc(raporId) {
+      seciliRaporId = raporId;
+      const select = document.getElementById('sorumluSecim');
+      select.innerHTML = '<option value="">Görevlendirilecek personeli seçin...</option>' + Object.keys(personelSozluk).map(id => `<option value="${id}">${personelSozluk[id]}</option>`).join('');
+      document.getElementById('aksiyonModal').classList.remove('hidden');
+    }
+    function aksiyonModalKapat() { document.getElementById('aksiyonModal').classList.add('hidden'); document.getElementById('aksiyonMetni').value = ''; seciliRaporId = null; }
+    async function aksiyonKaydet() {
+      const sorumluId = document.getElementById('sorumluSecim').value;
+      const metin = document.getElementById('aksiyonMetni').value.trim();
+      if(!sorumluId || !metin) return alert("Lütfen eksiksiz doldurun.");
+      const btn = document.getElementById('aksiyonKaydetBtn');
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Atanıyor...`; btn.disabled = true;
+      const { error } = await db.from('aksiyonlar').insert({ rapor_id: seciliRaporId, sorumlu_id: sorumluId, aksiyon_metni: metin });
+      btn.innerHTML = `Görevi Ata`; btn.disabled = false;
+      if(error) { alert("Hata oluştu."); } else { aksiyonModalKapat(); verileriYukle(); }
+    }
+    async function aksiyonCozuldu(aksiyonId) {
+      if(!confirm("Emin misiniz?")) return;
+      const { error } = await db.from('aksiyonlar').update({ durum: 'ÇÖZÜLDÜ', cozum_tarihi: new Date().toISOString() }).eq('id', aksiyonId);
+      if(!error) verileriYukle();
+    }
+
+    // --- PERSONEL FONKSİYONLARI ---
     async function personelleriGetir() {
       const { data } = await db.from('personel').select('*');
       if (data) {
-        const body = document.getElementById('personelTableBody');
-        body.innerHTML = data.map(p => `
+        document.getElementById('personelTableBody').innerHTML = data.map(p => `
           <tr class="hover:bg-blue-50 transition">
-            <td class="p-4 md:p-5 font-bold text-slate-800 flex items-center gap-2 md:gap-3 whitespace-nowrap"><div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">${p.ad_soyad.charAt(0)}</div>${p.ad_soyad}</td>
-            <td class="p-4 md:p-5 text-slate-600 font-medium whitespace-nowrap">${p.santiye || '-'}</td>
-            <td class="p-4 md:p-5 whitespace-nowrap"><span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">${p.unvan || p.rol}</span></td>
-            <td class="p-4 md:p-5 text-right whitespace-nowrap"><button onclick="showProfile('${p.id}')" class="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">İncele</button></td>
+            <td class="p-4 font-bold text-slate-800 flex items-center gap-3 whitespace-nowrap"><div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">${p.ad_soyad.charAt(0)}</div>${p.ad_soyad}</td>
+            <td class="p-4 text-slate-600 font-medium whitespace-nowrap">${p.santiye || '-'}</td>
+            <td class="p-4 whitespace-nowrap"><span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border">${p.unvan || p.rol}</span></td>
+            <td class="p-4 text-right whitespace-nowrap"><button onclick="showProfile('${p.id}')" class="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">İncele</button></td>
           </tr>`).join('');
       }
     }
-
     async function showProfile(personelId) {
       document.getElementById('sayfaBasligi').textContent = "Personel Zeka Profili";
       const { data: p } = await db.from('personel').select('*').eq('id', personelId).single();
@@ -349,53 +496,183 @@
       const tumRaporlar = raporlar && raporlar.length > 0 ? raporlar.map(r => r.rapor_metni).join(' | ') : "Rapor yok";
       
       document.getElementById('contentArea').innerHTML = `
-        <button onclick="renderView('personel')" class="mb-6 text-slate-500 hover:text-blue-900 font-bold transition flex items-center bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm inline-block text-xs md:text-sm"><i class="fas fa-arrow-left mr-2"></i> Listeye Dön</button>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center relative overflow-hidden h-fit">
-            <div class="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-blue-100 to-transparent"></div>
-            <div class="w-20 h-20 md:w-24 md:h-24 bg-white border-4 border-white rounded-full flex items-center justify-center text-blue-900 text-3xl font-black mb-3 shadow-md z-10">${p.ad_soyad.charAt(0)}</div>
-            <h2 class="text-xl md:text-2xl font-black text-slate-800 z-10 text-center">${p.ad_soyad}</h2>
-            <p class="text-slate-500 mb-6 font-medium text-xs md:text-sm z-10 text-center">${p.unvan || 'Personel'} • ${p.santiye || 'Şantiye'}</p>
-            <button id="aiBtn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm md:text-base"><i class="fas fa-brain"></i> Derin AI Analizi</button>
-            <div id="aiSonucAlani" class="hidden w-full mt-6 text-left"><div class="bg-indigo-50 p-4 md:p-5 rounded-2xl border border-indigo-100 relative"><div class="absolute -top-3 left-4 bg-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm"><i class="fas fa-sparkles mr-1"></i> ArCiv AI</div><div id="analizYazisi" class="text-xs md:text-sm text-slate-800 space-y-3 leading-relaxed mt-2"></div></div></div>
+        <button onclick="renderView('personel')" class="mb-6 text-slate-500 hover:text-blue-900 font-bold bg-white px-3 py-1.5 rounded-xl border shadow-sm flex items-center"><i class="fas fa-arrow-left mr-2"></i> Listeye Dön</button>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border flex flex-col items-center h-fit relative overflow-hidden">
+            <div class="w-20 h-20 bg-white border-4 rounded-full flex items-center justify-center text-blue-900 text-3xl font-black mb-3 shadow z-10">${p.ad_soyad.charAt(0)}</div>
+            <h2 class="text-xl font-black text-slate-800 z-10">${p.ad_soyad}</h2>
+            <p class="text-slate-500 mb-6 font-medium text-sm z-10">${p.unvan || 'Personel'} • ${p.santiye || 'Şantiye'}</p>
+            <button id="aiBtn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2"><i class="fas fa-brain"></i> Derin AI Analizi</button>
+            <div id="aiSonucAlani" class="hidden w-full mt-6 text-left"><div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 relative"><div id="analizYazisi" class="text-sm text-slate-800 space-y-3 leading-relaxed mt-2"></div></div></div>
           </div>
-          <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200">
-            <h3 class="text-lg md:text-xl font-bold mb-4 text-slate-800 flex items-center"><i class="fas fa-history text-blue-500 mr-2"></i> Tüm Kayıtlar</h3>
-            <div id="raporListesi" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar"></div>
-          </div>
+          <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border"><div id="raporListesi" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar"></div></div>
         </div>`;
-        
-      const raporListesiAlani = document.getElementById('raporListesi');
-      if(raporlar && raporlar.length > 0) { raporListesiAlani.innerHTML = raporlar.map(r => olusturRaporKarti(r)).join(''); } 
-      else { raporListesiAlani.innerHTML = `<div class="text-center text-slate-400 py-8 text-xs md:text-sm"><i class="fas fa-folder-open text-2xl mb-2"></i><br>Kayıt bulunamadı.</div>`; }
+      if(raporlar && raporlar.length > 0) { document.getElementById('raporListesi').innerHTML = raporlar.map(r => olusturRaporKarti(r)).join(''); }
       document.getElementById('aiBtn').addEventListener('click', function() { calistirAI(tumRaporlar); });
     }
-
     async function calistirAI(metin) {
-      if (metin === "Rapor yok") return alert("Analiz edilecek rapor bulunamadı!");
-      const btn = document.getElementById('aiBtn');
-      const sonucAlani = document.getElementById('aiSonucAlani');
-      const analizYazisi = document.getElementById('analizYazisi');
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Analiz Ediliyor...`;
-      btn.disabled = true;
+      if (metin === "Rapor yok") return alert("Rapor bulunamadı!");
+      const btn = document.getElementById('aiBtn'); const sonucAlani = document.getElementById('aiSonucAlani'); const analizYazisi = document.getElementById('analizYazisi');
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Analiz Ediliyor...`; btn.disabled = true;
+      const prompt = `İSG uzmanısın. Raporlardan çalışan profili çıkar (1.İSG, 2.Psikoloji, 3.Puan). Raporlar: ${metin}`;
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const result = await response.json();
+        let analiz = result.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 block mt-3 mb-1 text-sm font-bold">$1</strong>').replace(/\n/g, '<br>');
+        sonucAlani.classList.remove('hidden'); analizYazisi.innerHTML = analiz;
+      } catch(e) { alert("Yoğunluk var."); } finally { btn.innerHTML = `<i class="fas fa-brain"></i> Derin AI Analizi`; btn.disabled = false; }
+    }
 
-      const prompt = `Sen profesyonel bir İş Sağlığı ve Güvenliği (İSG) uzmanı ve Endüstriyel Psikologsun. Aşağıda bir personelin yazdığı saha raporları bulunuyor. Bu raporları inceleyerek çalışanın kapsamlı bir profilini çıkar. Yanıtını sade metin olarak şu 3 başlık altında ver: **1. İSG VE RİSK ANALİZİ:** Çalışanın becerisi. **2. DUYGUSAL VE PSİKOLOJİK PROFİL:** Stres ve motivasyonu. **3. PUANTAJ:** 100 üzerinden sadece puanı. Raporlar: ${metin}`;
+    // --- FİNANS FONKSİYONLARI ---
+    async function finansVerileriniYukle() {
+      const seciliYil = document.getElementById('filtreYil').value;
+      const seciliAy = document.getElementById('filtreAy').value;
+      let sorgu = db.from('puantaj_maliyet').select('*').eq('donem_yil', seciliYil);
+      if (seciliAy !== 'TÜMÜ') { sorgu = sorgu.eq('donem_ay', seciliAy); }
+
+      const { data: finanslar, error } = await sorgu.order('donem_ay', {ascending: false}).order('olusturulma_tarihi', {ascending: false});
+      const tableBody = document.getElementById('finansTableBody');
+      
+      if(error || !finanslar || finanslar.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="fas fa-folder-open text-xl mb-1"></i><br>Seçilen döneme ait kayıt bulunamadı.</td></tr>`;
+        document.getElementById('toplamNetMaas').textContent = "₺0"; document.getElementById('toplamSgkKesintisi').textContent = "₺0"; document.getElementById('toplamBrutMaliyet').textContent = "₺0";
+        globalFinansMetni = "";
+        return;
+      }
+
+      aktifFinansData = finanslar; 
+      let toplamNet = 0, toplamSgk = 0, toplamBrut = 0;
+      let raporMetniBirikimi = [];
+
+      tableBody.innerHTML = finanslar.map(f => {
+        toplamNet += f.net_maas; toplamSgk += f.sgk_kesintisi; toplamBrut += f.brut_maas;
+        const pIsim = personelSozluk[f.personel_id] || "Bilinmeyen Personel";
+        raporMetniBirikimi.push(`${pIsim} (${f.donem_ay} ${f.donem_yil}): Net=${f.net_maas}, SGK=${f.sgk_kesintisi}, Brüt=${f.brut_maas}, Ç.Gün=${f.calisma_gunu}`);
+
+        return `
+          <tr class="hover:bg-slate-50 transition font-medium">
+            <td class="p-4 font-bold text-slate-800">${pIsim}</td>
+            <td class="p-4 text-slate-500">${f.donem_ay} ${f.donem_yil}</td>
+            <td class="p-4"><span class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">${f.calisma_gunu} Ç</span> / <span class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">${f.hafta_tatili} HT</span></td>
+            <td class="p-4 text-emerald-600 font-bold">₺${f.net_maas.toLocaleString('tr-TR')}</td>
+            <td class="p-4 text-amber-600 font-bold">₺${f.sgk_kesintisi.toLocaleString('tr-TR')}</td>
+            <td class="p-4 text-blue-900 font-black">₺${f.brut_maas.toLocaleString('tr-TR')}</td>
+            <td class="p-4 text-center">
+              <button onclick="finansModalAc('${f.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-sm transition shadow-sm" title="Düzenle"><i class="fas fa-edit"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('toplamNetMaas').textContent = `₺${toplamNet.toLocaleString('tr-TR')}`;
+      document.getElementById('toplamSgkKesintisi').textContent = `₺${toplamSgk.toLocaleString('tr-TR')}`;
+      document.getElementById('toplamBrutMaliyet').textContent = `₺${toplamBrut.toLocaleString('tr-TR')}`;
+      globalFinansMetni = raporMetniBirikimi.join(' | ');
+    }
+
+    function finansModalAc(kayitId = null) {
+      duzenlenenFinansId = kayitId;
+      const selectPersonel = document.getElementById('finansPersonelSecim');
+      selectPersonel.innerHTML = '<option value="">Personel Seçin...</option>' + Object.keys(personelSozluk).map(id => `<option value="${id}">${personelSozluk[id]}</option>`).join('');
+
+      if (kayitId) {
+        document.getElementById('finansModalBaslik').innerHTML = `<i class="fas fa-edit text-blue-600 mr-2"></i> Kaydı Düzenle`;
+        const kayit = aktifFinansData.find(k => k.id === kayitId);
+        if(kayit) {
+          document.getElementById('finansModalYil').value = kayit.donem_yil;
+          document.getElementById('finansModalAy').value = kayit.donem_ay;
+          document.getElementById('finansPersonelSecim').value = kayit.personel_id;
+          document.getElementById('finansNetMaas').value = kayit.net_maas;
+          document.getElementById('finansSgkKesintisi').value = kayit.sgk_kesintisi;
+          document.getElementById('finansCalismaGunu').value = kayit.calisma_gunu;
+          document.getElementById('finansHtGunu').value = kayit.hafta_tatili;
+          otomatikBrutHesapla();
+        }
+      } else {
+        document.getElementById('finansModalBaslik').innerHTML = `<i class="fas fa-plus-circle text-blue-600 mr-2"></i> Yeni Kayıt Ekle`;
+        document.getElementById('finansPersonelSecim').value = "";
+        document.getElementById('finansNetMaas').value = "";
+        document.getElementById('finansSgkKesintisi').value = "";
+        document.getElementById('finansBrutMaas').value = "";
+        document.getElementById('finansCalismaGunu').value = "22";
+        document.getElementById('finansHtGunu').value = "8";
+        
+        const seciliYil = document.getElementById('filtreYil').value;
+        const seciliAy = document.getElementById('filtreAy').value !== 'TÜMÜ' ? document.getElementById('filtreAy').value : ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"][new Date().getMonth()];
+        document.getElementById('finansModalYil').value = seciliYil;
+        document.getElementById('finansModalAy').value = seciliAy;
+      }
+      document.getElementById('finansModal').classList.remove('hidden');
+    }
+    function finansModalKapat() { document.getElementById('finansModal').classList.add('hidden'); duzenlenenFinansId = null; }
+    function otomatikBrutHesapla() {
+      const net = parseFloat(document.getElementById('finansNetMaas').value) || 0;
+      const sgk = parseFloat(document.getElementById('finansSgkKesintisi').value) || 0;
+      document.getElementById('finansBrutMaas').value = (net + sgk).toFixed(2);
+    }
+    async function finansKaydet() {
+      const yil = document.getElementById('finansModalYil').value;
+      const ay = document.getElementById('finansModalAy').value;
+      const pId = document.getElementById('finansPersonelSecim').value;
+      const net = parseFloat(document.getElementById('finansNetMaas').value);
+      const sgk = parseFloat(document.getElementById('finansSgkKesintisi').value);
+      const brut = parseFloat(document.getElementById('finansBrutMaas').value);
+      const cGunu = parseInt(document.getElementById('finansCalismaGunu').value) || 0;
+      const htGunu = parseInt(document.getElementById('finansHtGunu').value) || 0;
+
+      if(!pId || isNaN(net) || isNaN(sgk)) return alert("Lütfen Personel, Net ve SGK alanlarını doldurun.");
+
+      const btn = document.getElementById('finansKaydetBtn');
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Kaydediliyor...`; btn.disabled = true;
+
+      const veriPaketi = { personel_id: pId, donem_ay: ay, donem_yil: parseInt(yil), net_maas: net, sgk_kesintisi: sgk, brut_maas: brut, calisma_gunu: cGunu, hafta_tatili: htGunu };
+      let error = null;
+
+      if (duzenlenenFinansId) {
+        const { error: updErr } = await db.from('puantaj_maliyet').update(veriPaketi).eq('id', duzenlenenFinansId);
+        error = updErr;
+      } else {
+        const { data: kontrol } = await db.from('puantaj_maliyet').select('id').eq('personel_id', pId).eq('donem_ay', ay).eq('donem_yil', yil);
+        if (kontrol && kontrol.length > 0) {
+          if(!confirm("Bu personelin seçilen ayda zaten kaydı var. Üzerine yazılsın mı?")) { btn.innerHTML = `Kaydet`; btn.disabled = false; return; }
+          const { error: updErr } = await db.from('puantaj_maliyet').update(veriPaketi).eq('id', kontrol[0].id);
+          error = updErr;
+        } else {
+          const { error: insErr } = await db.from('puantaj_maliyet').insert(veriPaketi);
+          error = insErr;
+        }
+      }
+      btn.innerHTML = `Kaydet`; btn.disabled = false;
+      if(error) { alert("Kayıt sırasında hata oluştu."); } else { finansModalKapat(); finansVerileriniYukle(); } 
+    }
+    async function calistirFinansAI() {
+      if(!globalFinansMetni) return alert("Analiz edilecek finansal veri bulunamadı! Lütfen bir ay seçin.");
+      
+      const ozelKomut = document.getElementById('aiFinansKomut').value.trim();
+      const seciliAy = document.getElementById('filtreAy').value;
+      const seciliYil = document.getElementById('filtreYil').value;
+
+      const btn = document.getElementById('aiFinansBtn');
+      const sonucAlani = document.getElementById('aiFinansSonucAlani');
+      const analizYazisi = document.getElementById('finansAnalizYazisi');
+
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Zeka Devrede...`; btn.disabled = true;
+
+      let prompt = `Sen kıdemli bir kurumsal finans analisti ve maliyet muhasebesi uzmanısın. İncelenen Dönem: ${seciliAy} ${seciliYil}. `;
+      if(ozelKomut) { prompt += `\n\nKULLANICININ ÖZEL İSTEĞİ: "${ozelKomut}"\nLütfen analizini doğrudan bu isteğe odaklanarak yap.`; } 
+      else { prompt += `\n\nAşağıdaki ham verileri konsolide ederek şu 3 başlık altında stratejik bir makro finans raporu hazırla:\n**1. MALİYET VE BÜTÇE DENGESİ:** Toplam iş gücü maliyet analizi.\n**2. ANOMALİ VE OPTİMİZASYON:** Verimlilik analizi ve bütçe aşım tehlikeleri.\n**3. STRATEJİK YÖNETİCİ ÖZETİ:** Kısa aksiyon tavsiyesi.`; }
+      prompt += `\n\nİşte finansal veriler: ${globalFinansMetni}`;
 
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error?.message || "API Hatası");
-
         let analiz = result.candidates[0].content.parts[0].text;
-        analiz = analiz.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 block mt-3 mb-1 text-sm font-bold">$1</strong>');
-        analiz = analiz.replace(/\n/g, '<br>');
-        sonucAlani.classList.remove('hidden');
-        analizYazisi.innerHTML = analiz;
-      } catch(e) { 
-        if (e.message.includes("quota") || e.message.includes("429") || e.message.includes("demand")) { alert("ArCiv AI şu an çok yoğun. Lütfen birkaç dakika sonra deneyin."); } 
-        else { alert("Hata: " + e.message); }
-      } finally { btn.innerHTML = `<i class="fas fa-brain"></i> Derin AI Analizi`; btn.disabled = false; }
+        analiz = analiz.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-900 block mt-4 mb-1 text-sm font-bold">$1</strong>').replace(/\n/g, '<br>');
+        sonucAlani.classList.remove('hidden'); analizYazisi.innerHTML = analiz;
+      } catch(e) { alert("AI sunucuları yoğun, lütfen tekrar deneyin."); } 
+      finally { btn.innerHTML = `<i class="fas fa-analytics"></i> AI Raporu Üret`; btn.disabled = false; }
     }
   </script>
 </body>
