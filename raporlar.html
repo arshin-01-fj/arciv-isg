@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GES Operasyon Raporu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="config.js"></script>
+  <style>
+    @media print {
+      body { background-color: white !important; }
+      .no-print { display: none !important; }
+      .print-shadow-none { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+      .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans p-4 md:p-8 text-slate-800">
+
+  <!-- ÜST BAR (Geri Dönüş ve Yazdır) -->
+  <div class="max-w-6xl mx-auto mb-6 flex justify-between items-center no-print">
+    <a href="admin_panel.html" class="bg-white px-4 py-2 rounded-xl shadow-sm font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2 border border-slate-200">
+      <i class="fas fa-arrow-left"></i> Komuta Merkezine Dön
+    </a>
+    <button onclick="window.print()" class="bg-blue-900 text-white px-5 py-2 rounded-xl shadow-md font-bold hover:bg-blue-800 transition flex items-center gap-2">
+      <i class="fas fa-print"></i> Raporu Yazdır / PDF Al
+    </button>
+  </div>
+
+  <!-- RAPOR ANA KONTEYNERİ -->
+  <div class="max-w-6xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-xl print-shadow-none print-exact">
+    
+    <!-- RAPOR BAŞLIĞI -->
+    <div class="border-b-2 border-slate-100 pb-6 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-xl flex items-center justify-center text-2xl shadow-sm"><i class="fas fa-solar-panel"></i></div>
+          <h1 class="text-3xl font-black text-slate-800 tracking-tight">GES Operasyon Raporu</h1>
+        </div>
+        <p class="text-sm font-bold text-slate-500 uppercase tracking-widest ml-15">GES-1 | ArCiv İşletim Sistemi</p>
+      </div>
+      <div class="text-left md:text-right bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Rapor Oluşturma Tarihi</p>
+        <p class="text-lg font-black text-blue-900" id="raporTarihi">-</p>
+      </div>
+    </div>
+
+    <!-- YENİ: ZAMAN FİLTRELEME ÇUBUĞU -->
+    <div class="mb-10 bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm flex flex-col xl:flex-row gap-4 items-center justify-between no-print">
+       <div class="flex flex-wrap gap-2 w-full xl:w-auto justify-center xl:justify-start">
+         <button onclick="hizliFiltre('tumu')" id="btn-tumu" class="bg-slate-200 text-slate-600 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition">Tümü</button>
+         <button onclick="hizliFiltre('buay')" id="btn-buay" class="bg-slate-200 text-slate-600 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition">Bu Ay</button>
+         <button onclick="hizliFiltre('son3ay')" id="btn-son3ay" class="bg-slate-200 text-slate-600 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition">Son 3 Ay</button>
+         <button onclick="hizliFiltre('buyil')" id="btn-buyil" class="bg-slate-200 text-slate-600 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition">Bu Yıl</button>
+       </div>
+       <div class="flex items-center gap-2 text-sm w-full xl:w-auto justify-center xl:justify-end">
+         <span class="font-bold text-slate-400 hidden sm:inline">Özel Tarih:</span>
+         <input type="date" id="tarihBas" class="border border-slate-300 rounded-lg px-2 py-2 text-slate-700 outline-none focus:border-blue-500 bg-white shadow-inner">
+         <span class="text-slate-400">-</span>
+         <input type="date" id="tarihBit" class="border border-slate-300 rounded-lg px-2 py-2 text-slate-700 outline-none focus:border-blue-500 bg-white shadow-inner">
+         <button onclick="ozelTarihFiltrele()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold transition shadow-sm"><i class="fas fa-filter mr-1"></i> Süz</button>
+       </div>
+    </div>
+
+    <!-- GÜNLÜK ÇALIŞAN VE SAHA ÖZETİ (BUGÜN) -->
+    <div class="mb-10 bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 md:p-6 relative overflow-hidden">
+      <div class="absolute -right-10 -top-10 opacity-5 text-indigo-900 text-9xl"><i class="fas fa-calendar-day"></i></div>
+      <h3 class="font-black text-indigo-900 text-sm md:text-base uppercase tracking-wider mb-5 flex items-center gap-2">
+        <i class="fas fa-bolt text-amber-500"></i> Günlük Saha & Çalışan Özeti (Bugün)
+      </h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl"><i class="fas fa-clipboard-check"></i></div>
+          <div><p class="text-xs font-bold text-slate-400 uppercase">Bugün Üretilen Rapor</p><p class="text-2xl font-black text-slate-800" id="bugunRapor">0</p></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-xl"><i class="fas fa-exclamation-triangle"></i></div>
+          <div><p class="text-xs font-bold text-slate-400 uppercase">Bugün Saptanan Kritik</p><p class="text-2xl font-black text-red-600" id="bugunKritik">0</p></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center">
+          <p class="text-xs font-bold text-slate-400 uppercase mb-2">Bugün Aktif Uzmanlar</p>
+          <div id="bugunUzmanlarAlani" class="flex flex-wrap gap-2">
+            <span class="text-xs text-slate-400 font-medium"><i class="fas fa-spinner fa-spin"></i> Bekleniyor...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEPE ÖZET KARTLARI (GENEL TOPLAM) -->
+    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4 border-l-4 border-slate-400 pl-3" id="donemBaslikText">Tüm Zamanlar Makro Özet</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center shadow-sm">
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Toplam Rapor</p>
+        <p class="text-3xl font-black text-slate-800 mt-1" id="statToplam">0</p>
+      </div>
+      <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center shadow-sm">
+        <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Güvenli İşlem</p>
+        <p class="text-3xl font-black text-emerald-700 mt-1" id="statGuvenli">0</p>
+      </div>
+      <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-center shadow-sm">
+        <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Uyarı / Orta</p>
+        <p class="text-3xl font-black text-amber-700 mt-1" id="statOrta">0</p>
+      </div>
+      <div class="bg-red-50 p-4 rounded-xl border border-red-200 text-center shadow-sm">
+        <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider">Kritik / Acil</p>
+        <p class="text-3xl font-black text-red-700 mt-1" id="statKritik">0</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      
+      <!-- SOL KOLON -->
+      <div class="space-y-10">
+        <!-- UZMAN BAZLI FAALİYET ÖZETİ (KART TASARIMI) -->
+        <div>
+          <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4 border-l-4 border-blue-500 pl-3 flex items-center justify-between">
+            <span><i class="fas fa-user-shield text-blue-500 mr-1"></i> Uzman Performans Profilleri</span>
+          </h3>
+          <div id="uzmanListesi" class="space-y-3">
+            <div class="text-center text-slate-400 py-4 border border-dashed border-slate-200 rounded-xl">Yükleniyor...</div>
+          </div>
+        </div>
+
+        <!-- BİRİM / KATEGORİ DAĞILIMI (YATAY BARLAR) -->
+        <div>
+          <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4 border-l-4 border-purple-500 pl-3"><i class="fas fa-chart-pie text-purple-500 mr-1"></i> Kategori Dağılımı</h3>
+          <div id="kategoriBarlar" class="space-y-5 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-center text-slate-400 text-sm">Yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAĞ KOLON -->
+      <div>
+        <!-- SPS ALAN BAZLI (EN YOĞUN 20) -->
+        <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4 border-l-4 border-orange-500 pl-3"><i class="fas fa-crosshairs text-orange-500 mr-1"></i> SPS Alan Odakları (Top 20 Yoğunluk)</h3>
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-slate-50 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
+              <tr><th class="p-4 font-black">Saha / SPS Alanı</th><th class="p-4 text-center font-black">Aktivite</th><th class="p-4 font-black">Risk Endeksi</th></tr>
+            </thead>
+            <tbody id="spsTablosu" class="divide-y divide-slate-100">
+              <tr><td colspan="3" class="p-6 text-center text-slate-400">Yükleniyor...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ANA VERİ ÖNBELLEĞİ (Sistemi yormamak için veritabanından bir kere çekilir)
+    let tumRaporlarCache = [];
+    let seciliDonemBaslik = "Tüm Zamanlar";
+
+    window.onload = async () => {
+      document.getElementById('raporTarihi').textContent = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+      
+      const { data: raporlar } = await db.from('raporlar').select('*, personel(ad_soyad)');
+      if(raporlar) {
+        tumRaporlarCache = raporlar;
+        hizliFiltre('tumu'); // Sayfa açılışında tüm veriyi ekrana bas
+        hesaplaGunluk(tumRaporlarCache); // Bugünün özetini bir kere hesapla (Filtrelerden bağımsızdır)
+      }
+    };
+
+    // FİLTRELEME MOTORU (Aylık, Yıllık, 3 Aylık)
+    function hizliFiltre(tip) {
+      // 1. Tüm butonların rengini sıfırla
+      const btnIds = ['btn-tumu', 'btn-buay', 'btn-son3ay', 'btn-buyil'];
+      btnIds.forEach(id => {
+        document.getElementById(id).className = 'bg-slate-200 text-slate-600 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition';
+      });
+      // 2. Tıklanan butonu aktif renge boya
+      document.getElementById('btn-' + tip).className = 'bg-blue-600 text-white shadow-md px-4 py-2 rounded-lg text-sm font-bold transition';
+
+      let baslangic = new Date(2000, 0, 1); // Varsayılan (Çok eski)
+      let bitis = new Date();
+      bitis.setHours(23, 59, 59, 999);
+      const simdi = new Date();
+
+      if (tip === 'buay') {
+        baslangic = new Date(simdi.getFullYear(), simdi.getMonth(), 1);
+        seciliDonemBaslik = "Bu Ay";
+      } else if (tip === 'son3ay') {
+        baslangic = new Date(simdi.getFullYear(), simdi.getMonth() - 3, simdi.getDate());
+        seciliDonemBaslik = "Son 3 Ay";
+      } else if (tip === 'buyil') {
+        baslangic = new Date(simdi.getFullYear(), 0, 1);
+        seciliDonemBaslik = "Bu Yıl";
+      } else {
+        seciliDonemBaslik = "Tüm Zamanlar";
+      }
+
+      // Özel tarih kutularını temizle
+      document.getElementById('tarihBas').value = '';
+      document.getElementById('tarihBit').value = '';
+
+      verileriSuzVeCiz(baslangic, bitis);
+    }
+
+    function ozelTarihFiltrele() {
+      const basVal = document.getElementById('tarihBas').value;
+      const bitVal = document.getElementById('tarihBit').value;
+      
+      if(!basVal || !bitVal) return alert("Lütfen hem başlangıç hem bitiş tarihi seçin.");
+
+      // Hızlı filtre butonlarının rengini sıfırla
+      const btnIds = ['btn-tumu', 'btn-buay', 'btn-son3ay', 'btn-buyil'];
+      btnIds.forEach(id => {
+        document.getElementById(id).className = 'bg-slate-200 text-slate-600 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition';
+      });
+
+      let baslangic = new Date(basVal);
+      baslangic.setHours(0,0,0,0);
+      let bitis = new Date(bitVal);
+      bitis.setHours(23,59,59,999);
+
+      seciliDonemBaslik = `${baslangic.toLocaleDateString('tr-TR')} - ${bitis.toLocaleDateString('tr-TR')}`;
+      
+      verileriSuzVeCiz(baslangic, bitis);
+    }
+
+    function verileriSuzVeCiz(baslangic, bitis) {
+       document.getElementById('donemBaslikText').textContent = seciliDonemBaslik + " Makro Özet";
+
+       // Verileri filtreden geçir
+       const filtrelenmisDizi = tumRaporlarCache.filter(r => {
+          const rTarih = new Date(r.olusturulma_tarihi);
+          return rTarih >= baslangic && rTarih <= bitis;
+       });
+
+       verileriDerle(filtrelenmisDizi);
+    }
+
+    // BUGÜNÜN ÖZETİNİ HESAPLAYAN SABİT FONKSİYON (Tarih filtresinden etkilenmez)
+    function hesaplaGunluk(tumDizi) {
+      const bugunTarihStr = new Date().toDateString();
+      let bugunRaporSayisi = 0;
+      let bugunKritikSayisi = 0;
+      let bugunUzmanlar = {};
+
+      tumDizi.forEach(r => {
+        const raporTarihiStr = new Date(r.olusturulma_tarihi).toDateString();
+        if (raporTarihiStr === bugunTarihStr) {
+           bugunRaporSayisi++;
+           if (r.risk_seviyesi === 'KRİTİK') bugunKritikSayisi++;
+           let uzmanIsim = r.personel ? (r.personel.ad_soyad || 'İsimsiz Uzman') : 'Bilinmeyen Uzman';
+           bugunUzmanlar[uzmanIsim] = (bugunUzmanlar[uzmanIsim] || 0) + 1;
+        }
+      });
+
+      document.getElementById('bugunRapor').textContent = bugunRaporSayisi;
+      document.getElementById('bugunKritik').textContent = bugunKritikSayisi;
+      
+      let bugunUzmanHTML = '';
+      const bugunUzmanListesi = Object.entries(bugunUzmanlar);
+      if (bugunUzmanListesi.length > 0) {
+         bugunUzmanHTML = bugunUzmanListesi.map(([isim, sayi]) => {
+            const basHarf = isim.charAt(0).toUpperCase();
+            return `<div class="flex items-center gap-1.5 bg-blue-50 border border-blue-100 px-2 py-1 rounded-lg"><div class="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-[10px] font-black flex items-center justify-center">${basHarf}</div><span class="text-[11px] font-bold text-slate-700">${isim} <span class="text-blue-500">(${sayi})</span></span></div>`;
+         }).join('');
+      } else {
+         bugunUzmanHTML = `<span class="text-xs text-slate-400 bg-white px-3 py-1.5 rounded-lg border border-slate-100"><i class="fas fa-bed mr-1"></i> Bugün henüz saha hareketi yok</span>`;
+      }
+      document.getElementById('bugunUzmanlarAlani').innerHTML = bugunUzmanHTML;
+    }
+
+    // FİLTRELENMİŞ VERİLERİ GRAFİK VE TABLOLARA BASAN ANA MOTOR
+    function verileriDerle(raporlar) {
+      if (!raporlar || raporlar.length === 0) {
+         document.getElementById('statToplam').textContent = "0";
+         document.getElementById('statKritik').textContent = "0";
+         document.getElementById('statOrta').textContent = "0";
+         document.getElementById('statGuvenli').textContent = "0";
+         document.getElementById('uzmanListesi').innerHTML = '<div class="text-center text-slate-400 py-4 border border-dashed border-slate-200 rounded-xl">Bu dönemde kayıtlı veri yok.</div>';
+         document.getElementById('spsTablosu').innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">Bu dönemde saha verisi yok.</td></tr>';
+         document.getElementById('kategoriBarlar').innerHTML = '<div class="text-center text-slate-400 py-4 border border-dashed border-slate-200 rounded-xl">Kategori verisi yok</div>';
+         return;
+      }
+
+      let toplam = raporlar.length;
+      let kritik = 0; let orta = 0; let guvenli = 0;
+      let uzmanVerileri = {}; let spsVerileri = {}; let kategoriVerileri = {};
+
+      raporlar.forEach(r => {
+        // --- GENEL İSTATİSTİKLER ---
+        if (r.risk_seviyesi === 'KRİTİK') kritik++;
+        else if (r.risk_seviyesi === 'ORTA') orta++;
+        else guvenli++;
+        
+        // --- UZMAN İSTATİSTİKLERİ ---
+        let uzmanIsim = r.personel ? (r.personel.ad_soyad || 'İsimsiz Uzman') : 'Bilinmeyen Uzman';
+        if (!uzmanVerileri[uzmanIsim]) uzmanVerileri[uzmanIsim] = { toplam: 0, kritik: 0 };
+        uzmanVerileri[uzmanIsim].toplam++;
+        if (r.risk_seviyesi === 'KRİTİK') uzmanVerileri[uzmanIsim].kritik++;
+
+        // --- SPS ALAN İSTATİSTİKLERİ ---
+        let alan = r.saha_alani || 'Belirtilmemiş';
+        if (!spsVerileri[alan]) spsVerileri[alan] = { sayi: 0, riskPuani: 0 };
+        spsVerileri[alan].sayi++;
+        if (r.risk_seviyesi === 'KRİTİK') spsVerileri[alan].riskPuani += 3;
+        else if (r.risk_seviyesi === 'ORTA') spsVerileri[alan].riskPuani += 1;
+
+        // --- KATEGORİ İSTATİSTİKLERİ ---
+        let kat = r.kategori || 'Genel İSG';
+        if (!kategoriVerileri[kat]) kategoriVerileri[kat] = 0;
+        kategoriVerileri[kat]++;
+      });
+
+      // --- EKRANA YAZDIRMA: GENEL TOPLAMLAR ---
+      document.getElementById('statToplam').textContent = toplam;
+      document.getElementById('statKritik').textContent = kritik;
+      document.getElementById('statOrta').textContent = orta;
+      document.getElementById('statGuvenli').textContent = guvenli;
+
+      // --- EKRANA YAZDIRMA: UZMAN LİSTESİ ---
+      let uzmanHTML = '';
+      let uzmanSiralama = Object.entries(uzmanVerileri).sort((a, b) => b[1].toplam - a[1].toplam);
+      const maxRapor = uzmanSiralama.length > 0 ? uzmanSiralama[0][1].toplam : 1;
+
+      uzmanSiralama.forEach(([isim, data]) => {
+        const basHarf = isim.charAt(0).toUpperCase();
+        const yuzdeGenislik = Math.max((data.toplam / maxRapor) * 100, 5); 
+        const kritikBadge = data.kritik > 0 ? `<span class="bg-red-100 border border-red-200 text-red-700 px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm" title="${data.kritik} Kritik Vaka Buldu"><i class="fas fa-exclamation-triangle"></i> ${data.kritik} Kritik</span>` : '<span class="bg-slate-100 text-slate-400 px-2 py-1 rounded-lg text-[10px] font-bold"><i class="fas fa-check"></i> Temiz</span>';
+
+        uzmanHTML += `
+          <div class="bg-white p-4 border border-slate-200 rounded-xl hover:shadow-md hover:border-blue-300 transition group flex flex-col gap-3">
+             <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                   <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-50 text-blue-800 font-black flex items-center justify-center border border-blue-200 shadow-inner">${basHarf}</div>
+                   <div>
+                      <p class="font-bold text-slate-800 text-sm group-hover:text-blue-700 transition">${isim}</p>
+                      <p class="text-[11px] text-slate-500 font-medium">${data.toplam} Faaliyet Formu</p>
+                   </div>
+                </div>
+                <div class="text-right flex-shrink-0">${kritikBadge}</div>
+             </div>
+             <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-blue-500 h-1.5 rounded-full" style="width: ${yuzdeGenislik}%"></div>
+             </div>
+          </div>
+        `;
+      });
+      document.getElementById('uzmanListesi').innerHTML = uzmanHTML;
+
+      // --- EKRANA YAZDIRMA: SPS ALAN TABLOSU ---
+      let spsSiralama = Object.entries(spsVerileri).sort((a, b) => b[1].sayi - a[1].sayi).slice(0, 20);
+      let spsHTML = '';
+      spsSiralama.forEach(([alan, data]) => {
+        let riskEtiketi = data.riskPuani > 5 ? '<span class="px-2.5 py-1 bg-red-100 border border-red-200 text-red-700 rounded-lg text-[10px] font-black"><i class="fas fa-fire mr-1"></i>Yüksek Risk</span>' : '<span class="px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold"><i class="fas fa-shield-alt mr-1"></i>İzleniyor</span>';
+        spsHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-4 font-bold text-slate-800 flex items-center gap-2"><div class="w-2 h-2 rounded-full ${data.riskPuani > 5 ? 'bg-red-500' : 'bg-emerald-500'}"></div>${alan}</td>
+            <td class="p-4 text-center"><span class="font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">${data.sayi}</span></td>
+            <td class="p-4">${riskEtiketi}</td>
+          </tr>
+        `;
+      });
+      document.getElementById('spsTablosu').innerHTML = spsHTML;
+
+      // --- EKRANA YAZDIRMA: KATEGORİ BARLARI ---
+      let barHTML = '';
+      const renkler = ['bg-amber-400', 'bg-blue-500', 'bg-orange-500', 'bg-emerald-500', 'bg-purple-500', 'bg-cyan-500', 'bg-rose-500'];
+      let renkIndex = 0;
+      
+      let kategoriSiralama = Object.entries(kategoriVerileri).sort((a, b) => b[1] - a[1]);
+      kategoriSiralama.forEach(([kat, sayi]) => {
+        let yuzde = Math.round((sayi / toplam) * 100);
+        let renk = renkler[renkIndex % renkler.length];
+        renkIndex++;
+
+        barHTML += `
+          <div class="group">
+            <div class="flex justify-between text-xs font-bold text-slate-600 mb-1.5">
+              <span class="group-hover:text-slate-900 transition">${kat}</span>
+              <span class="bg-slate-100 px-2 py-0.5 rounded-md">%${yuzde} <span class="text-slate-400 ml-1">(${sayi})</span></span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 shadow-inner">
+              <div class="${renk} h-2.5 rounded-full transition-all duration-1000 ease-out" style="width: ${yuzde}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById('kategoriBarlar').innerHTML = barHTML;
+    }
+  </script>
+</body>
+</html>
