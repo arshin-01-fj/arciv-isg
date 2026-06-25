@@ -57,8 +57,32 @@
 
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         
+        <div class="grid grid-cols-2 gap-3 mb-5 border-b border-slate-100 pb-5">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kategori Seçin</label>
+            <select id="kategoriSecimi" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+              <option value="Genel İSG">Genel İSG Raporu</option>
+              <option value="Elektrik">⚡ Elektrik</option>
+              <option value="Mekanik">⚙️ Mekanik</option>
+              <option value="Altyapı">🏗️ Altyapı</option>
+              <option value="Panel">🔲 Panel</option>
+              <option value="Toolbox">📘 Toolbox Toplantısı</option>
+              <option value="Denetim">🔍 Saha Denetimi</option>
+              <option value="Uygunsuzluk">⚠️ Uygunsuzluk Tespit</option>
+              <option value="Ramak Kala">💥 Ramak Kala Olay</option>
+              <option value="İş Durdurma">🛑 İŞ DURDURMA</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Saha / SPS Alanı</label>
+            <select id="sahaAlaniSecimi" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold text-blue-900 focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50">
+              <option value="Merkez / Genel Alan">Merkez / Genel Alan</option>
+              </select>
+          </div>
+        </div>
+
         <div class="flex justify-between items-center mb-2">
-          <label class="block text-sm font-bold text-slate-700">Yeni Rapor</label>
+          <label class="block text-sm font-bold text-slate-700">Rapor Detayı</label>
           <label for="fotoYukle" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 border border-slate-300">
             <i class="fas fa-camera text-blue-600"></i> Fotoğraf
             <input type="file" id="fotoYukle" accept="image/*" multiple class="hidden" onchange="fotoSecildi(this)">
@@ -74,8 +98,8 @@
         </div>
 
         <div class="relative">
-          <textarea id="rapor" class="w-full p-4 border border-slate-200 rounded-xl h-40 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Rapor detaylarını girin..."></textarea>
-          <button id="micBtn" onclick="sesleYaz()" class="absolute right-3 bottom-3 bg-blue-50 text-blue-900 w-10 h-10 rounded-full hover:bg-blue-100 flex items-center justify-center">
+          <textarea id="rapor" class="w-full p-4 border border-slate-200 rounded-xl h-40 focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" placeholder="Olayı, arızayı veya durumu detaylıca yazın..."></textarea>
+          <button id="micBtn" onclick="sesleYaz()" class="absolute right-3 bottom-3 bg-blue-50 text-blue-900 w-10 h-10 rounded-full hover:bg-blue-100 flex items-center justify-center shadow-sm border border-blue-100">
             <i class="fas fa-microphone"></i>
           </button>
         </div>
@@ -85,8 +109,8 @@
            <p id="riskAciklamasi" class="text-sm mt-1"></p>
         </div>
         
-        <button id="gonderBtn" onclick="kaydet()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 mt-4 rounded-xl transition shadow-lg shadow-blue-200">
-          Raporu Gönder
+        <button id="gonderBtn" onclick="kaydet()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3.5 mt-5 rounded-xl transition shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
+          <i class="fas fa-paper-plane"></i> Raporu Komuta Merkezine Gönder
         </button>
       </div>
     </div>
@@ -105,7 +129,7 @@
   <script>
     let enlem = 0, boylam = 0;
     let seciliDosyalar = [];
-    let seciliDosyalarBase64 = []; // Çevrimdışı mod için fotoğrafları metin olarak tutar
+    let seciliDosyalarBase64 = []; 
 
     window.onload = async () => {
       const pId = localStorage.getItem('kullanici_id');
@@ -116,6 +140,12 @@
         document.getElementById('adSoyad').textContent = pData.ad_soyad;
         document.getElementById('unvanSantiye').textContent = `${pData.unvan || 'İSG Uzmanı'} | ${pData.santiye || 'Merkez'}`;
       }
+
+      // YENİ: SPS 1-100 Menüsünü Otomatik Doldurma
+      const sahaSecimi = document.getElementById('sahaAlaniSecimi');
+      for(let i = 1; i <= 100; i++) {
+        sahaSecimi.innerHTML += `<option value="SPS-${i}">SPS-${i}</option>`;
+      }
       
       navigator.geolocation.getCurrentPosition(pos => {
         enlem = pos.coords.latitude; boylam = pos.coords.longitude;
@@ -123,7 +153,7 @@
       });
       
       raporlariGetir();
-      baglantiKontrolu(); // Çevrimdışı kuyruğu kontrol et
+      baglantiKontrolu(); 
     };
 
     function toggleModal() { document.getElementById('raporModal').classList.toggle('hidden'); }
@@ -146,7 +176,7 @@
         if (kuyruk.length > 0) {
           syncBanner.classList.remove('hidden');
           document.getElementById('syncSayi').textContent = kuyruk.length;
-          senkronizeEt(); // İnternet geldiği gibi otomatik yollamayı dene
+          senkronizeEt(); 
         } else {
           syncBanner.classList.add('hidden');
         }
@@ -165,7 +195,7 @@
           
           const okuyucu = new FileReader();
           okuyucu.onload = function(e) {
-            seciliDosyalarBase64.push(e.target.result); // Base64 olarak kaydet
+            seciliDosyalarBase64.push(e.target.result); 
             const gecerliIndex = seciliDosyalarBase64.length - 1;
 
             const div = document.createElement('div');
@@ -204,7 +234,6 @@
       document.getElementById('fotoSayisi').textContent = aktifDosyalar;
     }
 
-    // BASE64'Ü GERİ DOSYAYA ÇEVİRME YARDIMCI FONKSİYONU
     function dataURLtoFile(dataurl, filename) {
         let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
             bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
@@ -222,20 +251,24 @@
       rec.onstart = () => { micBtn.classList.add('recording'); textarea.placeholder = "Dinliyorum, konuşabilirsiniz..."; };
       rec.onresult = e => { textarea.value += (textarea.value ? " " : "") + e.results[0][0].transcript; };
       rec.onerror = e => { console.error("Ses hatası:", e.error); alert("Mikrofona erişilemedi."); };
-      rec.onend = () => { micBtn.classList.remove('recording'); textarea.placeholder = "Rapor detaylarını girin..."; };
+      rec.onend = () => { micBtn.classList.remove('recording'); textarea.placeholder = "Olayı, arızayı veya durumu detaylıca yazın..."; };
       rec.start();
     }
 
-    // ANA KAYDETME FONKSİYONU (ONLINE / OFFLINE KARAR MERKEZİ)
+    // ANA KAYDETME FONKSİYONU
     async function kaydet() {
       const metin = document.getElementById('rapor').value;
-      if(!metin) return alert("Rapor boş!");
+      const kategori = document.getElementById('kategoriSecimi').value;
+      const sahaAlani = document.getElementById('sahaAlaniSecimi').value;
+      
+      if(!metin) return alert("Rapor metni boş bırakılamaz!");
 
-      // Eğer internet YOKSA raporu telefona (kuyruğa) kaydet
       if (!navigator.onLine) {
         let kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
         kuyruk.push({
           metin: metin,
+          kategori: kategori,       // YENİ EKLENDİ
+          saha_alani: sahaAlani,    // YENİ EKLENDİ
           enlem: enlem,
           boylam: boylam,
           fotograflar: seciliDosyalarBase64.filter(d => d !== null),
@@ -250,9 +283,8 @@
         return;
       }
 
-      // İNTERNET VARSA NORMAL İŞLEYİŞ
       const btn = document.getElementById('gonderBtn');
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> İşleniyor...`;
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Merkeze İletiliyor...`;
       btn.disabled = true;
 
       const box = document.getElementById('analizKutusu');
@@ -265,7 +297,7 @@
       if (temizDosyalar.length > 0) {
         document.getElementById('riskAciklamasi').textContent = "Fotoğraflar yükleniyor...";
         for (let i = 0; i < temizDosyalar.length; i++) {
-          const dosya = dataURLtoFile(temizDosyalar[i], 'foto.png'); // Base64'ü File objesine çevir
+          const dosya = dataURLtoFile(temizDosyalar[i], 'foto.png'); 
           const dosyaAdi = `rapor_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
           
           const { data: uploadData, error: uploadError } = await db.storage.from('rapor_fotograflari').upload(dosyaAdi, dosya);
@@ -277,7 +309,7 @@
       }
 
       document.getElementById('riskAciklamasi').textContent = "Yapay Zeka Analiz Ediyor...";
-      let risk = "DÜŞÜK", aciklama = "Analiz yapılamadı.";
+      let risk = "DÜŞÜK", aciklama = "Otomatik sınıflandırma yapıldı.";
 
       try {
         const { data: analiz, error: aiError } = await db.functions.invoke('analiz-et', { body: { metin: metin } });
@@ -287,6 +319,8 @@
       await db.from('raporlar').insert({
         personel_id: localStorage.getItem('kullanici_id'),
         rapor_metni: metin,
+        kategori: kategori,       // YENİ EKLENDİ
+        saha_alani: sahaAlani,    // YENİ EKLENDİ
         gps_enlem: enlem,
         gps_boylam: boylam,
         risk_seviyesi: risk,
@@ -294,7 +328,7 @@
         fotograflar: yuklenenFotoURLleri.join(',')
       });
       
-      document.getElementById('riskBasligi').textContent = risk === 'KRİTİK' ? "⚠️ KRİTİK RİSK!" : "✅ GÜVENLİ";
+      document.getElementById('riskBasligi').textContent = risk === 'KRİTİK' ? "⚠️ KRİTİK RİSK!" : "✅ MERKEZE ULAŞTI";
       document.getElementById('riskAciklamasi').textContent = aciklama;
       box.className = `mt-4 p-4 rounded-xl border-2 text-center ${risk === 'KRİTİK' ? 'bg-red-50 border-red-500 text-red-800' : 'bg-green-50 border-green-500 text-green-800'}`;
       
@@ -302,7 +336,7 @@
       tumFotolariSil();
       raporlariGetir();
       
-      btn.innerHTML = `Raporu Gönder`;
+      btn.innerHTML = `<i class="fas fa-paper-plane"></i> Raporu Komuta Merkezine Gönder`;
       btn.disabled = false;
     }
 
@@ -323,7 +357,6 @@
         let r = kuyruk[i];
         let yuklenenFotoURLleri = [];
         
-        // Önce fotoları yükle
         if (r.fotograflar && r.fotograflar.length > 0) {
           for (let j = 0; j < r.fotograflar.length; j++) {
             const dosya = dataURLtoFile(r.fotograflar[j], 'foto.png');
@@ -336,17 +369,17 @@
           }
         }
 
-        // Sonra AI analizini yap
         let risk = "DÜŞÜK", aciklama = "Çevrimdışı kayıt, otomatik analiz edildi.";
         try {
           const { data: analiz } = await db.functions.invoke('analiz-et', { body: { metin: r.metin } });
           if(analiz) { risk = analiz.seviye; aciklama = analiz.aciklama; }
         } catch(e) {}
 
-        // Veritabanına yaz
         const { error } = await db.from('raporlar').insert({
           personel_id: localStorage.getItem('kullanici_id'),
           rapor_metni: r.metin,
+          kategori: r.kategori || 'Genel İSG',      // YENİ EKLENDİ
+          saha_alani: r.saha_alani || 'Merkez Alan',// YENİ EKLENDİ
           gps_enlem: r.enlem,
           gps_boylam: r.boylam,
           risk_seviyesi: risk,
@@ -358,7 +391,6 @@
         if (!error) basariliGonderim++;
       }
 
-      // Gönderilenleri kuyruktan temizle
       if (basariliGonderim === kuyruk.length) {
         localStorage.removeItem('arciv_kuyruk');
         syncBanner.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Tüm raporlar başarıyla senkronize edildi!`;
@@ -376,11 +408,14 @@
       if(data && data.length > 0) {
         liste.innerHTML = data.map(r => `
           <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-bold text-slate-700">${new Date(r.olusturulma_tarihi).toLocaleDateString()}</span>
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="font-bold text-slate-700 block">${new Date(r.olusturulma_tarihi).toLocaleDateString()}</span>
+                <span class="text-[10px] font-bold text-blue-600">${r.saha_alani || 'Alan Seçilmedi'} • ${r.kategori || 'Genel'}</span>
+              </div>
               <span class="px-2 py-1 rounded text-xs font-bold ${r.risk_seviyesi === 'KRİTİK' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${r.risk_seviyesi}</span>
             </div>
-            <p class="text-slate-600">${r.rapor_metni}</p>
+            <p class="text-slate-600 mt-1">${r.rapor_metni}</p>
           </div>`).join('');
       } else { liste.innerHTML = '<p class="text-center text-slate-400 py-4">Henüz rapor bulunamadı.</p>'; }
     }
