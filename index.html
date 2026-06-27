@@ -2,11 +2,11 @@
 <html lang="tr">
 <head>
   <link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ArCiv — Sisteme Giriş</title>
@@ -48,36 +48,45 @@
       </button>
     </div>
 
-    <!-- Hata Mesajı Kutusu (Daha dikkat çekici) -->
+    <!-- Hata Mesajı Kutusu -->
     <div id="hataMesaji" class="hidden mt-6 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm text-center font-semibold flex items-center justify-center gap-2">
        <i class="fas fa-exclamation-circle"></i> <span></span>
     </div>
   </div>
 
   <script>
-    // 1. OTURUM KONTROLÜ
+    // 1. OTURUM KONTROLÜ (YENİ ROL MANTIĞIYLA)
     window.onload = async function() {
       const pId = localStorage.getItem('kullanici_id');
       if (pId) {
-        // Ekranı hafif soluk yap ki yönlendirme olana kadar kullanıcı bir şeye tıklamasın
         document.body.classList.add('opacity-50', 'pointer-events-none'); 
         
-        // Önce LocalStorage'daki hazır role bak, yoksa veritabanından çek
         let rol = localStorage.getItem('rol');
+        
+        // Eğer yerel hafızada rol eksikse veritabanından çek
         if (!rol) {
           const { data } = await db.from('personel').select('rol').eq('id', pId).single();
-          rol = data ? data.rol : 'personel';
+          if (data) {
+            rol = data.rol;
+            localStorage.setItem('rol', rol || 'calisan');
+          }
         }
 
-        if (rol === 'yonetici' || rol === 'admin') {
+        // Harf çakışmalarını önlemek için küçük harfe çeviriyoruz
+        const r = (rol || '').toLowerCase().trim();
+
+        // Akıllı Otomatik Yönlendirme Kontrolü (SADECE ROL)
+        if (r === 'yonetici' || r === 'yönetici') {
           window.location.href = 'admin_panel.html';
+        } else if (r === 'calisan1') {
+          window.location.href = 'saglik_form.html';
         } else {
           window.location.href = 'form.html';
         }
       }
     };
 
-    // 2. GİRİŞ YAP FONKSİYONU
+    // 2. GİRİŞ YAP FONKSİYONU (YENİ ROL MANTIĞIYLA)
     async function girisYap() {
       const kAdi = document.getElementById('kullaniciAdi').value.trim();
       const sif = document.getElementById('sifre').value.trim();
@@ -94,8 +103,6 @@
       hataKutusu.classList.add('hidden');
 
       try {
-        // ÖNEMLİ: Supabase'de 'personel' tablosunda e-postaları tuttuğun sütun adının 'kullanici_adi' 
-        // olduğundan emin ol. Değilse buradaki 'kullanici_adi' yazısını değiştir.
         const { data, error } = await db
           .from('personel')
           .select('*')
@@ -108,14 +115,22 @@
         // Giriş başarılı, verileri kaydet
         localStorage.setItem('kullanici_id', data.id);
         localStorage.setItem('ad_soyad', data.ad_soyad);
-        localStorage.setItem('rol', data.rol || 'personel');
+        localStorage.setItem('rol', data.rol || 'calisan');
 
-        // Yönlendirme
-        if (data.rol === 'yonetici' || data.rol === 'admin') {
+        const r = (data.rol || '').toLowerCase().trim();
+
+        // --- BAŞLANGIÇ: ROL ODAKLI YOL AYRIMI MOTORU ---
+        if (r === 'yonetici' || r === 'yönetici') {
+          // 1. Yol: Yönetici ise
           window.location.href = 'admin_panel.html';
+        } else if (r === 'calisan1') {
+          // 2. Yol: Sağlıkçı / Revir personeli ise
+          window.location.href = 'saglik_form.html';
         } else {
+          // 3. Yol: Geri kalan herkes (calisan) standart forma
           window.location.href = 'form.html';
         }
+        // --- BİTİŞ: ROL ODAKLI YOL AYRIMI MOTORU ---
 
       } catch (err) {
         gosterHata(err.message);
@@ -127,14 +142,13 @@
     // Hata gösterme animasyonu
     function gosterHata(mesaj) {
       const hataKutusu = document.getElementById('hataMesaji');
-      hataKutusu.querySelector('span').textContent = mesaj;
+      hataKutusu.querySelector('span').textContent = mesaj; // Düzeltildi: mensaje yerine mesaj
       hataKutusu.classList.remove('hidden');
-      // Hafifçe titreme animasyonu
       hataKutusu.classList.add('animate-pulse');
       setTimeout(() => hataKutusu.classList.remove('animate-pulse'), 500);
     }
 
-    // Enter tuşuyla giriş yapabilme
+    // Enter tuşuyla hızlı giriş
     document.addEventListener('keydown', e => { if (e.key === 'Enter') girisYap(); });
   </script>
 </body>

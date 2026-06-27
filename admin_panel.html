@@ -3,20 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArCiv — GES Komuta Merkezi</title>
+  <title>ArCiv — Komuta Merkezi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="config.js"></script>
   
-  <link rel="manifest" href="manifest.json">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log("SW Kayıt Hatası:", err));
-    }
-  </script>
-
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -24,55 +17,74 @@
     .animate-pulse-fast { animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   </style>
 </head>
-<body class="bg-slate-50 flex min-h-screen font-sans relative overflow-x-hidden">
+<body class="bg-slate-50 flex min-h-screen font-sans relative overflow-x-hidden transition-colors duration-500" id="mainBody">
   
   <div id="sidebarOverlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm transition-opacity"></div>
 
-  <aside id="sidebar" class="bg-gradient-to-b from-blue-900 to-slate-900 text-white w-72 p-6 flex flex-col shadow-2xl fixed inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
-    <div class="text-center mb-10 pb-6 border-b border-blue-800 relative">
-      <div class="w-16 h-16 bg-blue-800/50 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
-        <i class="fas fa-shield-alt text-3xl text-blue-200"></i>
+  <aside id="sidebar" class="bg-gradient-to-b from-slate-900 to-slate-800 text-white w-72 p-6 flex flex-col shadow-2xl fixed inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 border-r border-slate-700">
+    <div class="text-center mb-10 pb-6 border-b border-slate-700 relative">
+      <div class="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner border border-slate-600">
+        <i class="fas fa-shield-alt text-3xl text-slate-300"></i>
       </div>
       <h2 class="text-2xl font-black tracking-widest text-white">ArCiv</h2>
-      <p class="text-[10px] text-blue-300 font-bold tracking-widest mt-1">GES OPERASYON</p>
-      <button onclick="toggleSidebar()" class="lg:hidden absolute top-0 right-0 text-blue-300 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+      <p class="text-[10px] text-slate-400 font-bold tracking-widest mt-1">KOMUTA MERKEZİ</p>
+      <button onclick="toggleSidebar()" class="lg:hidden absolute top-0 right-0 text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
     </div>
     
     <nav class="space-y-3 flex-1">
-      <button onclick="renderView('dashboard'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
-        <i class="fas fa-satellite-dish w-8 text-blue-400 group-hover:text-white transition"></i> Canlı İzleme
+      <button onclick="renderView('dashboard'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-slate-700 rounded-xl transition text-sm font-semibold group">
+        <i class="fas fa-satellite-dish w-8 text-slate-400 group-hover:text-white transition"></i> Canlı İzleme
       </button>
-      <button onclick="renderView('personel'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
-        <i class="fas fa-users w-8 text-blue-400 group-hover:text-white transition"></i> Personel Zekası
+      <button onclick="renderView('personel'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-slate-700 rounded-xl transition text-sm font-semibold group">
+        <i class="fas fa-users w-8 text-slate-400 group-hover:text-white transition"></i> Personel Zekası
       </button>
-      <button onclick="renderView('finans'); toggleSidebar();" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group">
-        <i class="fas fa-wallet w-8 text-blue-400 group-hover:text-white transition"></i> Finansal Zeka
-      </button>
+      
+      <a href="finans_panel.html" class="w-full flex items-center text-left p-4 hover:bg-slate-700 rounded-xl transition text-sm font-semibold group">
+        <i class="fas fa-wallet w-8 text-slate-400 group-hover:text-white transition"></i> Finansal Zeka
+      </a>
 
-      <a href="raporlar.html" class="w-full flex items-center text-left p-4 hover:bg-blue-800/50 rounded-xl transition text-sm font-semibold group mt-2 border-t border-blue-800/50 pt-6">
+      <a href="raporlar.html" class="w-full flex items-center text-left p-4 hover:bg-slate-700 rounded-xl transition text-sm font-semibold group mt-2 border-t border-slate-700 pt-6">
         <i class="fas fa-file-pdf w-8 text-amber-400 group-hover:text-amber-300 transition"></i> Yönetici Raporları
       </a>
     </nav>
     
-    <button onclick="cikisYap()" class="w-full flex items-center text-left p-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-xl transition text-sm font-semibold mt-auto">
+    <button onclick="cikisYap()" class="w-full flex items-center text-left p-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition text-sm font-semibold mt-auto border border-red-500/20">
       <i class="fas fa-power-off w-8"></i> Sistemden Çık
     </button>
   </aside>
 
   <main class="flex-1 p-4 md:p-8 lg:p-10 h-screen overflow-y-auto w-full">
-    <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 gap-4">
+    
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 pb-4 border-b border-slate-200 gap-4">
       <div class="flex items-center gap-3">
         <button onclick="toggleSidebar()" class="lg:hidden bg-white p-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-sm">
           <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 id="sayfaBasligi" class="text-xl md:text-2xl font-bold text-slate-800 truncate">Yükleniyor...</h1>
+        <h1 id="sayfaBasligi" class="text-xl md:text-2xl font-bold text-slate-800 truncate flex items-center gap-2">Komuta Merkezi</h1>
       </div>
       
-      <div class="flex items-center gap-2 md:gap-3 bg-white px-3 md:px-4 py-2 rounded-full shadow-sm border border-slate-200 flex-shrink-0">
-        <div class="w-7 h-7 md:w-8 md:h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-bold text-xs md:text-sm" id="adminBasHarf">A</div>
-        <span class="text-xs md:text-sm font-semibold text-slate-700 hidden sm:inline" id="adminIsim">Yönetici</span>
+      <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+        <div class="bg-slate-200 p-1 rounded-xl flex shadow-inner" id="modSalteri">
+          <button onclick="modDegistir('isg')" id="btnModIsg" class="px-4 md:px-6 py-2 text-xs md:text-sm font-black rounded-lg bg-white shadow-md text-blue-700 transition-all flex items-center gap-2">
+            <i class="fas fa-hard-hat"></i> İSG Ağ
+          </button>
+          <button onclick="modDegistir('saglik')" id="btnModSaglik" class="px-4 md:px-6 py-2 text-xs md:text-sm font-black rounded-lg text-slate-500 hover:text-teal-600 transition-all flex items-center gap-2">
+            <i class="fas fa-heartbeat"></i> Sağlık Ağ
+          </button>
+        </div>
+
+        <select id="santiyeSecici" onchange="santiyeDegistir()" class="border-2 border-slate-200 rounded-xl px-4 py-2 text-xs md:text-sm font-bold text-slate-700 outline-none focus:border-slate-400 bg-white shadow-sm cursor-pointer">
+          <option value="TÜMÜ">🌍 Tüm Projeler</option>
+          <option value="Karapınar GES">📍 Karapınar GES</option>
+          <option value="Osmaniye GES">📍 Osmaniye GES</option>
+          <option value="Gülcük GES">📍 Gülcük GES</option>
+          <option value="Viranşehir GES">📍 Viranşehir GES</option>
+        </select>
+
+        <div class="w-8 h-8 bg-slate-100 text-slate-800 rounded-lg flex items-center justify-center font-black text-sm border border-slate-200" id="adminBasHarf">A</div>
       </div>
     </div>
+
     <div id="contentArea" class="animate-fade-in"></div>
   </main>
 
@@ -86,205 +98,191 @@
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Sorumlu Personel</label>
-          <select id="sorumluSecim" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></select>
+          <select id="sorumluSecim" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-700 outline-none bg-slate-50"></select>
         </div>
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">Yapılacak İşlem</label>
-          <textarea id="aksiyonMetni" class="w-full border border-slate-300 rounded-xl px-4 py-3 h-28 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></textarea>
+          <textarea id="aksiyonMetni" class="w-full border border-slate-300 rounded-xl px-4 py-3 h-28 text-slate-700 outline-none bg-slate-50"></textarea>
         </div>
       </div>
       <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
         <button onclick="aksiyonModalKapat()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
-        <button id="aksiyonKaydetBtn" onclick="aksiyonKaydet()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition flex items-center gap-2">Görevi Ata</button>
+        <button id="aksiyonKaydetBtn" onclick="aksiyonKaydet()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition">Görevi Ata</button>
       </div>
     </div>
   </div>
 
-  <!-- FİNANS MODALI -->
-  <div id="finansModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+  <!-- PERSONEL PROFİL MODALI (YENİ EKLENDİ) -->
+  <div id="profilModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
       <div class="p-5 border-b flex justify-between items-center bg-slate-50">
-        <h3 id="finansModalBaslik" class="font-bold text-slate-800"><i class="fas fa-calculator text-blue-600 mr-2"></i> Finansal Kayıt Ekle/Düzenle</h3>
-        <button onclick="finansModalKapat()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+        <h3 class="font-bold text-slate-800"><i class="fas fa-user-circle text-blue-600 mr-2"></i> Personel Profili İnceleme</h3>
+        <button onclick="document.getElementById('profilModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
       </div>
-      <div class="p-6 space-y-3.5 overflow-y-auto max-h-[70vh]">
-        <div class="grid grid-cols-2 gap-3 border-b border-slate-100 pb-3 mb-1">
-          <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1">Kayıt Yılı</label>
-            <select id="finansModalYil" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
-              <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1">Kayıt Ayı</label>
-            <select id="finansModalAy" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
-              <option value="Ocak">Ocak</option><option value="Şubat">Şubat</option><option value="Mart">Mart</option>
-              <option value="Nisan">Nisan</option><option value="Mayıs">Mayıs</option><option value="Haziran">Haziran</option>
-              <option value="Temmuz">Temmuz</option><option value="Ağustos">Ağustos</option><option value="Eylül">Eylül</option>
-              <option value="Ekim">Ekim</option><option value="Kasım">Kasım</option><option value="Aralık">Aralık</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">Personel Seçimi</label>
-          <select id="finansPersonelSecim" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></select>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-bold text-slate-700 mb-1">Net Maaş (₺)</label>
-            <input type="number" id="finansNetMaas" oninput="otomatikBrutHesapla()" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-slate-700 mb-1">SGK Kesintisi (₺)</label>
-            <input type="number" id="finansSgkKesintisi" oninput="otomatikBrutHesapla()" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">Brüt Maaş (₺) <span class="text-xs font-normal text-blue-600">(Otomatik)</span></label>
-          <input type="number" id="finansBrutMaas" readonly class="w-full border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-100 text-slate-500 font-bold outline-none">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-bold text-slate-700 mb-1">Çalışma Günü</label>
-            <input type="number" id="finansCalismaGunu" value="22" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-slate-700 mb-1">HT Günü</label>
-            <input type="number" id="finansHtGunu" value="8" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-          </div>
-        </div>
+      <div class="p-6 overflow-y-auto">
+         <div id="p-raporListesi" class="space-y-3"></div>
       </div>
       <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
-        <button onclick="finansModalKapat()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
-        <button id="finansKaydetBtn" onclick="finansKaydet()" class="px-5 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl font-bold shadow-md transition flex items-center gap-2">Kaydet</button>
+        <button onclick="document.getElementById('profilModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">Kapat</button>
       </div>
     </div>
   </div>
 
   <script>
-    // GLOBAL DEĞİŞKENLER
+    let aktifMod = 'isg'; 
+    let aktifSantiye = 'TÜMÜ';
+    
+    const SANTIYE_SPS = { 
+      'TÜMÜ': 100, 
+      'Karapınar GES': 50, 
+      'Osmaniye GES': 120, 
+      'Gülcük GES': 80,
+      'Viranşehir GES': 90
+    };
+
     let riskChartInstance = null;
     let personelSozluk = {}; 
     let seciliRaporId = null; 
     let tumRaporlarData = [];
     
-    let globalFinansMetni = "";
-    let duzenlenenFinansId = null; 
-    let aktifFinansData = []; 
+    let aktifPersonelRaporlari = []; // Profil incelenen personelin raporlarını tutar
+    // Personel filtrelemesi için veriyi tutacağımız değişken
+    let globalPersonelData = [];
 
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebarOverlay');
-      sidebar.classList.toggle('-translate-x-full');
-      overlay.classList.toggle('hidden');
+      document.getElementById('sidebar').classList.toggle('-translate-x-full');
+      document.getElementById('sidebarOverlay').classList.toggle('hidden');
     }
 
     window.onload = async () => {
       const pId = localStorage.getItem('kullanici_id');
       if (!pId) { window.location.href = 'index.html'; return; }
       
-      const ad = localStorage.getItem('ad_soyad') || 'Yönetici';
-      document.getElementById('adminIsim').textContent = ad;
-      document.getElementById('adminBasHarf').textContent = ad.charAt(0).toUpperCase();
+      document.getElementById('adminBasHarf').textContent = (localStorage.getItem('ad_soyad') || 'A').charAt(0).toUpperCase();
 
       const { data: pData } = await db.from('personel').select('id, ad_soyad');
-      if(pData) { 
-        pData.forEach(p => personelSozluk[p.id] = p.ad_soyad || 'Bilinmeyen Personel'); 
-      }
+      if(pData) { pData.forEach(p => personelSozluk[p.id] = p.ad_soyad); }
 
       renderView('dashboard');
     };
 
     function cikisYap() { localStorage.clear(); window.location.href = 'index.html'; }
 
+    function modDegistir(yeniMod) {
+      aktifMod = yeniMod;
+      document.getElementById('btnModIsg').className = aktifMod === 'isg' 
+        ? "px-4 md:px-6 py-2 text-xs md:text-sm font-black rounded-lg bg-white shadow-md text-blue-700 transition-all flex items-center gap-2"
+        : "px-4 md:px-6 py-2 text-xs md:text-sm font-black rounded-lg text-slate-500 hover:text-blue-600 transition-all flex items-center gap-2";
+      document.getElementById('btnModSaglik').className = aktifMod === 'saglik'
+        ? "px-4 md:px-6 py-2 text-xs md:text-sm font-black rounded-lg bg-white shadow-md text-teal-700 transition-all flex items-center gap-2"
+        : "px-4 md:px-6 py-2 text-xs md:text-sm font-black rounded-lg text-slate-500 hover:text-teal-600 transition-all flex items-center gap-2";
+      renderView('dashboard');
+    }
+    function santiyeDegistir() { aktifSantiye = document.getElementById('santiyeSecici').value; renderView('dashboard'); }
+
+    // CSV İNDİRME YARDIMCI FONKSİYONU
+    function csvIndir(filename, rows) {
+      const basliklar = rows.shift(); // İlk satırı başlık olarak al
+      // CSV formatına uygun hale getir (Noktalı virgül ile ayırıyoruz Excel Türkçe uyumu için)
+      let csvContent = "\uFEFF"; // UTF-8 BOM
+      csvContent += basliklar.join(";") + "\n";
+      
+      rows.forEach(rowArray => {
+        let row = rowArray.map(item => {
+           // Metin içindeki çift tırnakları, noktalı virgülleri ve yeni satırları temizle/değiştir
+           let stringItem = String(item).replace(/"/g, '""').replace(/\n/g, ' '); 
+           return `"${stringItem}"`; // Excel için güvenli hale getirmek için tırnak içine al
+        });
+        csvContent += row.join(";") + "\n";
+      });
+
+      let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      let link = document.createElement("a");
+      let url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     function renderView(view) {
       const area = document.getElementById('contentArea');
       const baslik = document.getElementById('sayfaBasligi');
+      const modSalteri = document.getElementById('modSalteri');
+      const santiyeSecici = document.getElementById('santiyeSecici');
+
+      if (view === 'dashboard') { modSalteri.classList.remove('hidden'); santiyeSecici.classList.remove('hidden'); }
+      else { modSalteri.classList.add('hidden'); santiyeSecici.classList.add('hidden'); }
 
       if(view === 'dashboard') {
-        baslik.textContent = "GES Komuta Merkezi (Saha 1)";
+        const sMetin = aktifSantiye === 'TÜMÜ' ? 'Genel Saha' : aktifSantiye;
+        baslik.innerHTML = aktifMod === 'isg' 
+          ? `<i class="fas fa-satellite-dish text-blue-600"></i> İSG Operasyon Merkezi <span class="text-sm font-normal text-slate-500 ml-2">(${sMetin})</span>`
+          : `<i class="fas fa-heartbeat text-teal-600"></i> Sağlık & Revir Merkezi <span class="text-sm font-normal text-slate-500 ml-2">(${sMetin})</span>`;
         
-        // 100'lük Haritayı Dinamik Oluşturma
         let haritaHTML = '';
-        for(let i=1; i<=100; i++) {
-           haritaHTML += `<div id="sps-${i}" class="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-400 transition-all shadow-sm cursor-pointer hover:bg-slate-300 m-1">${i}</div>`;
+        const spsSayisi = SANTIYE_SPS[aktifSantiye];
+        for(let i=1; i<=spsSayisi; i++) {
+           haritaHTML += `<div id="sps-${i}" class="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-400 transition-all shadow-sm cursor-pointer m-1">${i}</div>`;
         }
 
+        let statsHTML = aktifMod === 'isg' 
+          ? `<div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center"><p class="text-[10px] text-blue-600 font-bold uppercase">Mekanik</p><p class="text-2xl font-black text-blue-700 mt-1" id="statMekanik">0</p></div>
+             <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 text-center"><p class="text-[10px] text-amber-600 font-bold uppercase">Elektrik</p><p class="text-2xl font-black text-amber-700 mt-1" id="statElektrik">0</p></div>
+             <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center"><p class="text-[10px] text-red-600 font-bold uppercase">Uygunsuzluk</p><p class="text-2xl font-black text-red-700 mt-1" id="statUygunsuzluk">0</p></div>
+             <div class="bg-rose-50 p-3 rounded-xl border border-rose-100 text-center"><p class="text-[10px] text-rose-600 font-bold uppercase">Ramak Kala</p><p class="text-2xl font-black text-rose-700 mt-1" id="statRamak">0</p></div>
+             <div class="bg-teal-50 p-3 rounded-xl border border-teal-100 text-center"><p class="text-[10px] text-teal-600 font-bold uppercase">Denetim</p><p class="text-2xl font-black text-teal-700 mt-1" id="statDenetim">0</p></div>
+             <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-center"><p class="text-[10px] text-slate-500 font-bold uppercase">Toplam Rapor</p><p class="text-2xl font-black text-slate-800 mt-1" id="statToplam">0</p></div>`
+          : `<div class="bg-teal-50 p-3 rounded-xl border border-teal-100 text-center"><p class="text-[10px] text-teal-600 font-bold uppercase">Poliklinik</p><p class="text-2xl font-black text-teal-700 mt-1" id="statPoliklinik">0</p></div>
+             <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center"><p class="text-[10px] text-blue-600 font-bold uppercase">İşe Giriş Raporu</p><p class="text-2xl font-black text-blue-700 mt-1" id="statIseGiris">0</p></div>
+             <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center"><p class="text-[10px] text-orange-600 font-bold uppercase">Kronik Hastalar</p><p class="text-2xl font-black text-orange-700 mt-1" id="statKronik">0</p></div>
+             <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center"><p class="text-[10px] text-red-600 font-bold uppercase">Çalışmaya Engel</p><p class="text-2xl font-black text-red-700 mt-1" id="statEngel">0</p></div>
+             <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center"><p class="text-[10px] text-emerald-600 font-bold uppercase">Aktif Sağlıkçı</p><p class="text-2xl font-black text-emerald-700 mt-1" id="statSaglikci">0</p></div>
+             <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-center"><p class="text-[10px] text-slate-500 font-bold uppercase">Tıbbi Kayıt</p><p class="text-2xl font-black text-slate-800 mt-1" id="statToplamSaglik">0</p></div>`;
+
+        // Kategoriler Mod'a göre değişiyor
+        let kategoriSecenekleri = aktifMod === 'isg' 
+          ? `<option value="Elektrik">Elektrik</option><option value="Mekanik">Mekanik</option><option value="Altyapı">Altyapı</option><option value="Panel">Panel</option><option value="Uygunsuzluk">Uygunsuzluk</option><option value="Ramak Kala">Ramak Kala</option><option value="İş Durdurma">İş Durdurma</option><option value="Denetim">Denetim</option><option value="Toolbox">Toolbox</option>`
+          : `<option value="Poliklinik Muayenesi">Poliklinik Muayenesi</option><option value="İşe Giriş Raporu">İşe Giriş Raporu</option>`;
+
         area.innerHTML = `
-          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mb-6">
-            <div class="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider">T. Çalışan</p><p class="text-xl md:text-2xl font-black text-slate-800 mt-1" id="statCalisan">0</p></div>
-            <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Aktif SPS</p><p class="text-xl md:text-2xl font-black text-emerald-700 mt-1" id="statSps">0<span class="text-xs font-normal text-emerald-500"> / 100</span></p></div>
-            <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-amber-600 font-bold uppercase tracking-wider">⚡ Elektrik</p><p class="text-xl md:text-2xl font-black text-amber-700 mt-1" id="statElektrik">0</p></div>
-            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-blue-600 font-bold uppercase tracking-wider">⚙️ Mekanik</p><p class="text-xl md:text-2xl font-black text-blue-700 mt-1" id="statMekanik">0</p></div>
-            <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-orange-600 font-bold uppercase tracking-wider">🏗️ Altyapı</p><p class="text-xl md:text-2xl font-black text-orange-700 mt-1" id="statAltyapi">0</p></div>
-            <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-purple-600 font-bold uppercase tracking-wider">🔲 Panel</p><p class="text-xl md:text-2xl font-black text-purple-700 mt-1" id="statPanel">0</p></div>
-            
-            <div class="bg-cyan-50 p-3 rounded-xl border border-cyan-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-cyan-600 font-bold uppercase tracking-wider">📘 Toolbox</p><p class="text-xl md:text-2xl font-black text-cyan-700 mt-1" id="statToolbox">0</p></div>
-            <div class="bg-teal-50 p-3 rounded-xl border border-teal-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-teal-600 font-bold uppercase tracking-wider">🔍 Denetim</p><p class="text-xl md:text-2xl font-black text-teal-700 mt-1" id="statDenetim">0</p></div>
-            <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-red-600 font-bold uppercase tracking-wider">⚠️ Uygunsuzluk</p><p class="text-xl md:text-2xl font-black text-red-700 mt-1" id="statUygunsuzluk">0</p></div>
-            <div class="bg-rose-50 p-3 rounded-xl border border-rose-100 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-rose-600 font-bold uppercase tracking-wider">💥 Ramak Kala</p><p class="text-xl md:text-2xl font-black text-rose-700 mt-1" id="statRamakKala">0</p></div>
-            <div class="bg-red-100 p-3 rounded-xl border border-red-200 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-red-800 font-bold uppercase tracking-wider">🛑 İş Durdurma</p><p class="text-xl md:text-2xl font-black text-red-900 mt-1" id="statIsDurdurma">0</p></div>
-            <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-center shadow-sm"><p class="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider">👥 T. Katılım</p><p class="text-xl md:text-2xl font-black text-slate-800 mt-1" id="statTKatilim">0</p></div>
-          </div>
-
+          <div class="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3 mb-6">${statsHTML}</div>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div class="lg:col-span-2 bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-200">
-               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                 <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-map-marked-alt text-blue-500"></i> Saha Haritası (SPS 1-100)</h3>
-                 <div class="flex flex-wrap gap-3 text-[10px] font-bold bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                   <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div> Elektrik</span>
-                   <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div> Mekanik</span>
-                   <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div> Kritik/Acil</span>
-                 </div>
-               </div>
-               <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-wrap justify-center items-center shadow-inner min-h-[250px]">
-                  ${haritaHTML}
-               </div>
+            <div class="lg:col-span-2 bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+               <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fas fa-map-marked-alt text-blue-500"></i> ${aktifSantiye} Haritası</h3>
+               <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-wrap justify-center items-center shadow-inner min-h-[250px]">${haritaHTML}</div>
             </div>
-
-            <div class="space-y-4 flex flex-col h-full">
-              <div class="bg-white p-4 md:p-5 rounded-3xl shadow-sm border border-slate-200 flex-1 overflow-y-auto no-scrollbar">
-                <h3 class="font-bold text-slate-800 text-xs md:text-sm mb-3 flex items-center gap-2 pb-2 border-b border-slate-50"><i class="fas fa-fire text-orange-500"></i> En Yoğun Alanlar</h3>
-                <div id="enYogunAlanlar" class="text-xs text-slate-400 text-center mt-4">Henüz saha kaydı yok</div>
-              </div>
-              <div class="bg-white p-4 md:p-5 rounded-3xl shadow-sm border border-slate-200 flex-1 overflow-y-auto no-scrollbar">
-                <h3 class="font-bold text-slate-800 text-xs md:text-sm mb-3 flex items-center gap-2 pb-2 border-b border-slate-50"><i class="fas fa-hard-hat text-blue-500"></i> Sahadaki Uzmanlar</h3>
-                <div id="uzmanDurumu" class="text-xs text-slate-400 text-center mt-4">Aktif personel bulunamadı</div>
-              </div>
-              <div class="bg-white p-4 md:p-5 rounded-3xl shadow-sm border border-slate-200 flex-1 overflow-y-auto no-scrollbar">
-                <h3 class="font-bold text-slate-800 text-xs md:text-sm mb-3 flex items-center gap-2 pb-2 border-b border-slate-50"><i class="fas fa-bolt text-emerald-500"></i> Canlı Log (Son 5)</h3>
-                <div id="sagCanliAkis" class="space-y-2 mt-2 text-center text-xs text-slate-400">Veri bekleniyor...</div>
-              </div>
+            <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 overflow-y-auto h-full">
+               <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2 pb-2 border-b border-slate-50"><i class="fas fa-bolt ${aktifMod==='isg'?'text-orange-500':'text-teal-500'}"></i> Canlı Log (Son 5)</h3>
+               <div id="sagCanliAkis" class="space-y-2 mt-2 text-center text-xs text-slate-400">Veri bekleniyor...</div>
             </div>
           </div>
-
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-200 h-fit">
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 h-fit">
                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-bar text-indigo-500"></i> Kategori Analizi</h3>
-               <div class="relative h-56 w-full">
-                 <canvas id="yatayRiskChart"></canvas>
-               </div>
+               <div class="relative h-56 w-full"><canvas id="yatayRiskChart"></canvas></div>
             </div>
-            
-            <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
-              <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-list text-blue-500"></i> Detaylı Rapor Listesi</h3>
-                <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
-                  <div class="relative w-full sm:w-44">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="aramaKutusu" onkeyup="filtreleRaporlar()" placeholder="Ara..." class="w-full border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                  </div>
-                  <div class="flex gap-2 w-full">
-                    <select id="riskFiltresi" onchange="filtreleRaporlar()" class="w-1/2 sm:w-auto border border-slate-200 rounded-lg px-2 py-2 text-xs md:text-sm outline-none bg-slate-50 font-medium text-slate-600">
-                      <option value="TÜMÜ">Tüm Riskler</option><option value="KRİTİK">⚠️ Kritik</option><option value="ORTA">⚡ Orta</option><option value="DÜŞÜK">✅ Düşük</option>
-                    </select>
-                    <select id="durumFiltresi" onchange="filtreleRaporlar()" class="w-1/2 sm:w-auto border border-slate-200 rounded-lg px-2 py-2 text-xs md:text-sm outline-none bg-slate-50 font-medium text-slate-600">
-                      <option value="TÜMÜ">Tüm Durumlar</option><option value="AÇIK">Bekleyen</option><option value="ÇÖZÜLDÜ">Çözülenler</option>
-                    </select>
-                  </div>
+            <div class="lg:col-span-2 bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+              <div class="flex flex-col sm:flex-row justify-between mb-4 gap-4 pb-4 border-b">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-list ${aktifMod==='isg'?'text-blue-500':'text-teal-500'}"></i> Detaylı Rapor Listesi</h3>
+                
+                <!-- YENİ: KATEGORİ FİLTRESİ EKLENDİ -->
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <input type="text" id="aramaKutusu" onkeyup="filtreleRaporlar()" placeholder="Ara..." class="flex-1 sm:w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
+                  
+                  <select id="kategoriFiltresi" onchange="filtreleRaporlar()" class="border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none">
+                    <option value="TÜMÜ">Tüm Türler</option>
+                    ${kategoriSecenekleri}
+                  </select>
+
+                  <select id="riskFiltresi" onchange="filtreleRaporlar()" class="${aktifMod === 'saglik' ? 'hidden' : ''} border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none">
+                    <option value="TÜMÜ">Tüm Riskler</option><option value="KRİTİK">Kritik</option><option value="ORTA">Orta</option><option value="DÜŞÜK">Düşük</option>
+                  </select>
                 </div>
               </div>
-              <div id="canliAkiş" class="space-y-4 overflow-y-auto pr-2 max-h-[500px] no-scrollbar"></div>
+              <div id="canliAkis" class="space-y-4 overflow-y-auto max-h-[500px] no-scrollbar"></div>
             </div>
           </div>
         `;
@@ -293,193 +291,128 @@
       } else if (view === 'personel') {
         baslik.textContent = "Personel Zekası & Profiller";
         area.innerHTML = `
-          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto no-scrollbar">
-            <table class="w-full text-left border-collapse min-w-[500px]">
-              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs md:text-sm uppercase tracking-wider">
-                <tr>
-                  <th class="p-4 md:p-5 font-semibold">Ad Soyad</th>
-                  <th class="p-4 md:p-5 font-semibold">Şantiye</th>
-                  <th class="p-4 md:p-5 font-semibold">Ünvan/Rol</th>
-                  <th class="p-4 md:p-5 font-semibold text-right">İşlem</th>
-                </tr>
-              </thead>
-              <tbody id="personelTableBody" class="divide-y divide-slate-100"></tbody>
-            </table>
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- YENİ: PERSONEL FİLTRELEME BÖLÜMÜ -->
+            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50">
+               <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-users-cog text-blue-500"></i> Aktif Personeller</h3>
+               <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <select id="persSantiyeFiltre" onchange="personelFiltrele()" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    <option value="TÜMÜ">Tüm Şantiyeler</option>
+                    <option value="Karapınar GES">Karapınar GES</option>
+                    <option value="Osmaniye GES">Osmaniye GES</option>
+                    <option value="Gülcük GES">Gülcük GES</option>
+                    <option value="Viranşehir GES">Viranşehir GES</option>
+                  </select>
+                  <select id="persRolFiltre" onchange="personelFiltrele()" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    <option value="TÜMÜ">Tüm Roller</option>
+                  </select>
+               </div>
+            </div>
+
+            <div class="overflow-x-auto no-scrollbar">
+              <table class="w-full text-left border-collapse min-w-[500px]">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs md:text-sm uppercase tracking-wider">
+                  <tr><th class="p-4 font-semibold">Ad Soyad</th><th class="p-4 font-semibold">Şantiye</th><th class="p-4 font-semibold">Ünvan/Rol</th><th class="p-4 font-semibold text-right">İşlem</th></tr>
+                </thead>
+                <tbody id="personelTableBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
           </div>`;
         personelleriGetir();
-
-      } else if (view === 'finans') {
-        baslik.textContent = "Finansal Zeka ve Maliyet Yönetimi";
-        const aylarTr = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-        const guncelAy = aylarTr[new Date().getMonth()];
-        const guncelYil = new Date().getFullYear();
-
-        area.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden">
-              <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-money-bill-wave"></i></div>
-              <div><p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Toplam Net</p><p id="toplamNetMaas" class="text-2xl font-black text-slate-800">₺0</p></div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden">
-              <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-percentage"></i></div>
-              <div><p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Toplam SGK</p><p id="toplamSgkKesintisi" class="text-2xl font-black text-slate-800">₺0</p></div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden">
-              <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-chart-line"></i></div>
-              <div><p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Toplam Brüt</p><p id="toplamBrutMaliyet" class="text-2xl font-black text-blue-900">₺0</p></div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
-                <div class="flex items-center gap-2">
-                  <div class="bg-slate-100 p-1.5 rounded-xl flex gap-1 border border-slate-200 shadow-inner">
-                    <select id="filtreYil" onchange="finansVerileriniYukle()" class="bg-transparent font-bold text-slate-700 outline-none text-sm px-2 cursor-pointer">
-                      <option value="2025" ${guncelYil == 2025 ? 'selected' : ''}>2025</option>
-                      <option value="2026" ${guncelYil == 2026 ? 'selected' : ''}>2026</option>
-                      <option value="2027" ${guncelYil == 2027 ? 'selected' : ''}>2027</option>
-                    </select>
-                    <span class="text-slate-300">|</span>
-                    <select id="filtreAy" onchange="finansVerileriniYukle()" class="bg-transparent font-bold text-blue-800 outline-none text-sm px-2 cursor-pointer">
-                      <option value="TÜMÜ">Tüm Aylar</option>
-                      ${aylarTr.map(ay => `<option value="${ay}" ${ay === guncelAy ? 'selected' : ''}>${ay}</option>`).join('')}
-                    </select>
-                  </div>
-                </div>
-                <button onclick="finansModalAc(null)" class="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Kayıt Ekle</button>
-              </div>
-              <div class="overflow-x-auto no-scrollbar">
-                <table class="w-full text-left border-collapse min-w-[650px]">
-                  <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                    <tr><th class="p-4">Personel</th><th class="p-4">Dönem</th><th class="p-4">Çalışma/HT</th><th class="p-4">Net</th><th class="p-4">SGK</th><th class="p-4">Brüt</th><th class="p-4 text-center">İşlem</th></tr>
-                  </thead>
-                  <tbody id="finansTableBody" class="divide-y divide-slate-100 text-xs md:text-sm">
-                    <tr><td colspan="7" class="p-10 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Yükleniyor...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 h-fit flex flex-col">
-              <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fas fa-brain text-indigo-600"></i> AI Finans Analisti</h3>
-              <div class="mb-5">
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Özel Analiz İsteği (Opsiyonel)</label>
-                <textarea id="aiFinansKomut" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50" placeholder="Örn: Sadece SGK kesintilerini veya fazla mesaileri analiz et..."></textarea>
-              </div>
-              <button id="aiFinansBtn" onclick="calistirFinansAI()" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-bold py-3.5 rounded-2xl shadow-md transition flex items-center justify-center gap-2"><i class="fas fa-analytics"></i> AI Raporu Üret</button>
-              <div id="aiFinansSonucAlani" class="hidden mt-6 text-left">
-                 <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 relative">
-                   <div class="absolute -top-3 left-6 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm"><i class="fas fa-sparkles mr-1"></i> ArCiv Makro AI</div>
-                   <div id="finansAnalizYazisi" class="text-xs md:text-sm text-slate-800 space-y-3 leading-relaxed mt-2"></div>
-                 </div>
-              </div>
-            </div>
-          </div>
-        `;
-        finansVerileriniYukle();
       }
     }
 
-    // --- DASHBOARD FONKSİYONLARI ---
     async function verileriYukle() {
-      const { data: raporlar } = await db.from('raporlar').select('*, personel(ad_soyad, santiye), aksiyonlar(*)').order('olusturulma_tarihi', {ascending: false});
+      const tabloAdi = aktifMod === 'isg' ? 'raporlar' : 'raporlar_saglik';
+      let sorgu = db.from(tabloAdi).select('*, personel(ad_soyad, santiye)').order('olusturulma_tarihi', {ascending: false});
       
-      if (raporlar) {
-        tumRaporlarData = raporlar;
-        
-        let statData = { 
-          elektrik: 0, mekanik: 0, altyapi: 0, panel: 0, 
-          toolbox: 0, denetim: 0, uygunsuzluk: 0, ramakkala: 0, isdurdurma: 0, 
-          aktifSps: new Set(), yogunluk: {}, uzmanlar: new Set() 
-        };
+      try {
+        const { data: veriler, error } = await sorgu;
+        if (error) throw error;
 
-        let sagCanliAkisHTML = '';
-
-        raporlar.forEach((r, index) => {
-          let kat = (r.kategori || '').toLowerCase();
-          
-          if(kat.includes('elektrik')) statData.elektrik++;
-          else if(kat.includes('mekanik')) statData.mekanik++;
-          else if(kat.includes('altyapı') || kat.includes('altyapi')) statData.altyapi++;
-          else if(kat.includes('panel')) statData.panel++;
-          else if(kat.includes('toolbox')) statData.toolbox++;
-          else if(kat.includes('denetim')) statData.denetim++;
-          else if(kat.includes('uygunsuzluk')) statData.uygunsuzluk++;
-          else if(kat.includes('ramak kala')) statData.ramakkala++;
-          else if(kat.includes('iş durdurma')) statData.isdurdurma++;
-
-          let alan = r.saha_alani || ''; 
-          if (alan.toUpperCase().startsWith('SPS-')) {
-             let num = parseInt(alan.split('-')[1]);
-             if (num >= 1 && num <= 100) {
-                statData.aktifSps.add(num);
-                statData.yogunluk[alan] = (statData.yogunluk[alan] || 0) + 1;
-                
-                let spsEl = document.getElementById(`sps-${num}`);
-                if(spsEl) {
-                   spsEl.classList.remove('bg-slate-100', 'text-slate-400');
-                   spsEl.classList.add('text-white', 'shadow-md');
-                   
-                   if(r.risk_seviyesi === 'KRİTİK' || kat.includes('uygunsuzluk') || kat.includes('iş durdurma') || kat.includes('ramak kala')) {
-                     spsEl.classList.add('bg-red-500', 'border-red-600', 'animate-pulse-fast'); 
-                   } else if(kat.includes('elektrik')) {
-                     spsEl.classList.add('bg-amber-400', 'border-amber-500');
-                   } else if(kat.includes('mekanik')) {
-                     spsEl.classList.add('bg-blue-500', 'border-blue-600');
-                   } else {
-                     spsEl.classList.add('bg-emerald-500', 'border-emerald-600'); 
-                   }
-                }
-             }
+        if (veriler) {
+          let temizVeriler = veriler;
+          if (aktifMod === 'isg') {
+             temizVeriler = veriler.filter(r => {
+                const k = (r.kategori || '').toLowerCase();
+                return !k.includes('muayene') && !k.includes('giriş raporu') && !k.includes('taraması');
+             });
           }
 
-          // Hata koruması eklendi: İsim boş mu diye kontrol ediliyor
-          if (r.personel && r.personel.ad_soyad) {
-              statData.uzmanlar.add(r.personel.ad_soyad);
+          tumRaporlarData = temizVeriler.filter(r => {
+             const pSantiye = r.personel ? r.personel.santiye : '';
+             return aktifSantiye === 'TÜMÜ' || pSantiye === aktifSantiye;
+          });
+
+          let statData = { genelToplam: tumRaporlarData.length };
+          let sagCanliAkisHTML = '';
+
+          if (aktifMod === 'isg') statData = { ...statData, elektrik: 0, mekanik: 0, denetim: 0, uygunsuzluk: 0, ramak: 0 };
+          else statData = { ...statData, poliklinik: 0, isegiris: 0, kronik: 0, engel: 0, saglikci: new Set() };
+
+          tumRaporlarData.forEach((r, index) => {
+            let kat = (r.kategori || '').toLowerCase();
+            
+            if (aktifMod === 'isg') {
+               if(kat.includes('elektrik')) statData.elektrik++;
+               else if(kat.includes('mekanik')) statData.mekanik++;
+               else if(kat.includes('denetim')) statData.denetim++;
+               else if(kat.includes('uygunsuzluk')) statData.uygunsuzluk++;
+               else if(kat.includes('ramak')) statData.ramak++;
+            } else {
+               if(kat.includes('poliklinik')) statData.poliklinik++;
+               else if(kat.includes('işe giriş')) statData.isegiris++;
+               if(r.kronik_rahatsizlik && r.kronik_rahatsizlik.toLowerCase() !== 'yok') statData.kronik++;
+               if(r.calismaya_engel && r.calismaya_engel.toLowerCase() !== 'yok') statData.engel++;
+               if(r.personel && r.personel.ad_soyad) statData.saglikci.add(r.personel.ad_soyad);
+            }
+
+            let alan = r.saha_alani || ''; 
+            if (alan.toUpperCase().startsWith('SPS-')) {
+               let num = parseInt(alan.split('-')[1]);
+               let spsEl = document.getElementById(`sps-${num}`);
+               if(spsEl) {
+                  spsEl.classList.remove('bg-slate-100', 'text-slate-400');
+                  spsEl.classList.add('text-white', 'shadow-md');
+                  if (aktifMod === 'isg') {
+                    if(r.risk_seviyesi === 'KRİTİK') spsEl.classList.add('bg-red-500', 'animate-pulse-fast'); 
+                    else spsEl.classList.add('bg-blue-500');
+                  } else {
+                    spsEl.classList.add('bg-teal-500', 'animate-pulse-fast');
+                  }
+               }
+            }
+
+            if (index < 5) {
+               const pAd = (r.personel && r.personel.ad_soyad) ? r.personel.ad_soyad.split(' ')[0] : 'Personel';
+               sagCanliAkisHTML += `<div class="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px] text-left shadow-sm flex flex-col"><span class="font-bold ${aktifMod === 'isg' ? 'text-blue-600' : 'text-teal-600'} uppercase tracking-wider mb-0.5">${r.kategori || 'Kayıt'}</span> <span class="text-slate-500">${pAd} • ${r.saha_alani || 'Belirsiz'}</span></div>`;
+            }
+          });
+
+          if (aktifMod === 'isg' && document.getElementById('statElektrik')) {
+            document.getElementById('statElektrik').textContent = statData.elektrik;
+            document.getElementById('statMekanik').textContent = statData.mekanik;
+            document.getElementById('statUygunsuzluk').textContent = statData.uygunsuzluk;
+            document.getElementById('statRamak').textContent = statData.ramak;
+            document.getElementById('statDenetim').textContent = statData.denetim;
+            document.getElementById('statToplam').textContent = statData.genelToplam;
+          } else if (aktifMod === 'saglik' && document.getElementById('statPoliklinik')) {
+            document.getElementById('statPoliklinik').textContent = statData.poliklinik;
+            document.getElementById('statIseGiris').textContent = statData.isegiris;
+            document.getElementById('statKronik').textContent = statData.kronik;
+            document.getElementById('statEngel').textContent = statData.engel;
+            document.getElementById('statSaglikci').textContent = statData.saglikci.size;
+            document.getElementById('statToplamSaglik').textContent = statData.genelToplam;
           }
 
-          if (index < 5) {
-             const pAd = (r.personel && r.personel.ad_soyad) ? r.personel.ad_soyad.split(' ')[0] : 'Personel';
-             const renk = r.risk_seviyesi === 'KRİTİK' ? 'text-red-500' : 'text-slate-600';
-             sagCanliAkisHTML += `<div class="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px] text-left shadow-sm flex flex-col"><span class="font-bold ${renk} uppercase tracking-wider mb-0.5">${r.kategori || 'Genel Kayıt'}</span> <span class="text-slate-500">${pAd} • ${r.saha_alani || 'Belirsiz Alan'}</span></div>`;
-          }
-        });
+          if(document.getElementById('sagCanliAkis')) document.getElementById('sagCanliAkis').innerHTML = sagCanliAkisHTML || 'Kayıt yok.';
 
-        if(document.getElementById('statElektrik')) {
-          document.getElementById('statElektrik').textContent = statData.elektrik;
-          document.getElementById('statMekanik').textContent = statData.mekanik;
-          document.getElementById('statAltyapi').textContent = statData.altyapi;
-          document.getElementById('statPanel').textContent = statData.panel;
-          document.getElementById('statToolbox').textContent = statData.toolbox;
-          document.getElementById('statDenetim').textContent = statData.denetim;
-          document.getElementById('statUygunsuzluk').textContent = statData.uygunsuzluk;
-          document.getElementById('statRamakKala').textContent = statData.ramakkala;
-          document.getElementById('statIsDurdurma').textContent = statData.isdurdurma;
-          document.getElementById('statSps').innerHTML = `${statData.aktifSps.size}<span class="text-xs font-normal text-emerald-500"> / 100</span>`;
-          document.getElementById('statCalisan').textContent = statData.uzmanlar.size;
+          cizYatayGrafik(statData);
+          filtreleRaporlar();
         }
-
-        let yogunAlanlarSirali = Object.entries(statData.yogunluk).sort((a,b) => b[1] - a[1]).slice(0, 4);
-        if(yogunAlanlarSirali.length > 0 && document.getElementById('enYogunAlanlar')) {
-           document.getElementById('enYogunAlanlar').innerHTML = yogunAlanlarSirali.map(a => `<div class="flex justify-between items-center bg-orange-50 text-orange-800 px-3 py-2 rounded-xl mb-2"><span class="font-bold text-xs"><i class="fas fa-map-marker-alt opacity-50 mr-1"></i> ${a[0]}</span><span class="text-[10px] font-black bg-white px-2 py-0.5 rounded-full shadow-sm">${a[1]} Rapor</span></div>`).join('');
-        }
-        
-        // Hata koruması eklendi: İsim boşsa çökmesini engeller
-        if(statData.uzmanlar.size > 0 && document.getElementById('uzmanDurumu')) {
-           document.getElementById('uzmanDurumu').innerHTML = Array.from(statData.uzmanlar).map(u => {
-               const uzmanIsmi = u || 'Bilinmiyor';
-               const basHarf = uzmanIsmi.charAt(0);
-               return `<div class="text-[11px] font-bold text-slate-700 bg-blue-50 px-3 py-2 rounded-xl mb-2 flex items-center shadow-sm"><div class="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center mr-2 text-[9px]">${basHarf}</div> ${uzmanIsmi}</div>`;
-           }).join('');
-        }
-        
-        if(sagCanliAkisHTML && document.getElementById('sagCanliAkis')) {
-           document.getElementById('sagCanliAkis').innerHTML = sagCanliAkisHTML;
-        }
-
-        cizYatayGrafik(statData);
-        filtreleRaporlar();
+      } catch(err) {
+        console.error("Veri Çekme Hatası:", err);
+        document.getElementById('canliAkis').innerHTML = `<div class="text-center text-red-500 py-10">Bağlantı hatası.</div>`;
       }
     }
 
@@ -488,28 +421,21 @@
       if(!aramaKutusu) return; 
       
       const aramaMetni = aramaKutusu.value.toLowerCase();
-      const riskFiltresi = document.getElementById('riskFiltresi').value;
-      const durumFiltresi = document.getElementById('durumFiltresi').value;
+      const riskFiltresi = document.getElementById('riskFiltresi') ? document.getElementById('riskFiltresi').value : 'TÜMÜ';
+      const kategoriFiltresi = document.getElementById('kategoriFiltresi') ? document.getElementById('kategoriFiltresi').value : 'TÜMÜ';
 
       const filtrelenmis = tumRaporlarData.filter(r => {
-        const personelAd = personelSozluk[r.personel_id] || (r.personel ? (r.personel.ad_soyad || '') : '');
-        const santiye = r.personel ? (r.personel.santiye || '') : '';
-        const icerikMetni = `${personelAd} ${santiye} ${r.rapor_metni} ${r.saha_alani||''} ${r.kategori||''} ${r.ai_aciklama || ''}`.toLowerCase();
-        
+        const icerikMetni = JSON.stringify(r).toLowerCase();
         const aramaUyumu = icerikMetni.includes(aramaMetni);
-        const riskUyumu = riskFiltresi === 'TÜMÜ' || r.risk_seviyesi === riskFiltresi;
+        const riskUyumu = aktifMod === 'saglik' || riskFiltresi === 'TÜMÜ' || r.risk_seviyesi === riskFiltresi;
+        const kategoriUyumu = kategoriFiltresi === 'TÜMÜ' || (r.kategori && r.kategori.includes(kategoriFiltresi));
         
-        let durumUyumu = true;
-        const aksiyon = r.aksiyonlar && r.aksiyonlar.length > 0 ? r.aksiyonlar[0] : null;
-        if (durumFiltresi === 'AÇIK') durumUyumu = aksiyon && aksiyon.durum === 'AÇIK';
-        else if (durumFiltresi === 'ÇÖZÜLDÜ') durumUyumu = aksiyon && aksiyon.durum === 'ÇÖZÜLDÜ';
-
-        return aramaUyumu && riskUyumu && durumUyumu;
+        return aramaUyumu && riskUyumu && kategoriUyumu;
       });
 
-      const akisAlani = document.getElementById('canliAkiş');
+      const akisAlani = document.getElementById('canliAkis');
       if (filtrelenmis.length === 0) {
-        akisAlani.innerHTML = `<div class="text-center text-slate-400 py-10"><i class="fas fa-search text-3xl mb-3"></i><br>Rapor bulunamadı.</div>`;
+        akisAlani.innerHTML = `<div class="text-center text-slate-400 py-10">Rapor bulunamadı.</div>`;
       } else {
         akisAlani.innerHTML = filtrelenmis.map(r => olusturRaporKarti(r)).join('');
       }
@@ -519,78 +445,167 @@
       const ctx = document.getElementById('yatayRiskChart');
       if(!ctx) return;
       if(riskChartInstance) riskChartInstance.destroy(); 
+      
+      let etiketler = [], veriler = [], renkler = [];
+      if (aktifMod === 'isg') {
+        etiketler = ['Elektrik', 'Mekanik', 'Uygunsuzluk', 'Ramak Kala', 'Denetim'];
+        veriler = [statData.elektrik, statData.mekanik, statData.uygunsuzluk, statData.ramak, statData.denetim];
+        renkler = ['#fbbf24', '#3b82f6', '#ef4444', '#f43f5e', '#14b8a6'];
+      } else {
+        etiketler = ['Poliklinik', 'İşe Giriş Raporu'];
+        veriler = [statData.poliklinik, statData.isegiris];
+        renkler = ['#0d9488', '#3b82f6'];
+      }
+
       riskChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'bar',
-        data: {
-          labels: ['Elektrik', 'Mekanik', 'Altyapı', 'Uygunsuzluk', 'Ramak Kala', 'Denetim'],
-          datasets: [{ 
-            label: 'Rapor Sayısı',
-            data: [statData.elektrik, statData.mekanik, statData.altyapi, statData.uygunsuzluk, statData.ramakkala, statData.denetim], 
-            backgroundColor: ['#fbbf24', '#3b82f6', '#f97316', '#ef4444', '#f43f5e', '#14b8a6'], 
-            borderRadius: 6 
-          }]
-        },
-        options: { 
-            indexAxis: 'y', 
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { beginAtZero: true, grid: {display: false} }, y: { grid: {display: false} } }
-        }
+        data: { labels: etiketler, datasets: [{ data: veriler, backgroundColor: renkler, borderRadius: 6 }] },
+        options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
     }
 
     function olusturRaporKarti(r) {
-      const riskRenk = r.risk_seviyesi === 'KRİTİK' ? 'bg-red-100 text-red-700 border-red-200' : (r.risk_seviyesi === 'ORTA' ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-green-100 text-green-700 border-green-200');
-      const personelAd = (r.personel && r.personel.ad_soyad) ? r.personel.ad_soyad : 'Bilinmeyen Personel';
-      const santiyeAd = (r.personel && r.personel.santiye) ? r.personel.santiye : '';
       const tarih = new Date(r.olusturulma_tarihi).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
-      
-      let fotoHTML = '';
-      if (r.fotograflar && r.fotograflar.trim() !== '') {
-        const fotolar = r.fotograflar.split(',');
-        fotoHTML = `<div class="flex gap-2 mt-3 overflow-x-auto pb-2 no-scrollbar">` + fotolar.map(f => `<a href="${f}" target="_blank"><img src="${f}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border-2 border-slate-200 hover:border-blue-500 transition shadow-sm"></a>`).join('') + `</div>`;
-      }
+      const santiye = (r.personel && r.personel.santiye) ? r.personel.santiye : '';
+      const personelAd = r.personel ? r.personel.ad_soyad : 'Bilinmiyor';
 
-      let aksiyonHTML = '';
-      const aksiyon = r.aksiyonlar && r.aksiyonlar.length > 0 ? r.aksiyonlar[0] : null;
-
-      if (!aksiyon) {
-        aksiyonHTML = `<button onclick="aksiyonModalAc('${r.id}')" class="text-xs md:text-sm bg-white border border-slate-300 text-slate-700 hover:text-blue-600 hover:border-blue-400 px-3 py-1.5 rounded-lg font-bold transition shadow-sm"><i class="fas fa-plus mr-1"></i> Aksiyon Ata</button>`;
-      } else {
-        if (aksiyon.durum === 'AÇIK') {
-          aksiyonHTML = `
-            <div class="w-full bg-orange-50 border border-orange-200 p-3 rounded-xl mt-2 flex justify-between items-center gap-2">
-              <div class="min-w-0 flex-1"><p class="text-[10px] font-bold text-orange-600 uppercase"><i class="fas fa-hard-hat mr-1"></i> MÜDAHALE BEKLENİYOR</p><p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${aksiyon.aksiyon_metni}</p><p class="text-[10px] text-slate-500">Sorumlu: <b>${personelSozluk[aksiyon.sorumlu_id] || 'Bilinmiyor'}</b></p></div>
-              <button onclick="aksiyonCozuldu('${aksiyon.id}')" class="bg-green-500 hover:bg-green-600 text-white p-2 md:p-3 rounded-lg shadow transition flex-shrink-0"><i class="fas fa-check text-sm"></i></button>
-            </div>`;
-        } else {
-          const cozumTarihi = new Date(aksiyon.cozum_tarihi).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
-          aksiyonHTML = `<div class="w-full bg-green-50 border border-green-200 p-2.5 rounded-xl mt-2 opacity-75 text-[11px] md:text-xs"><p class="font-bold text-green-700 uppercase"><i class="fas fa-check-double mr-1"></i> ÇÖZÜLDÜ</p><p class="text-slate-600 mt-0.5">Sorumlu <b>${personelSozluk[aksiyon.sorumlu_id] || 'Bilinmiyor'}</b> kapattı. (${cozumTarihi})</p></div>`;
-        }
-      }
-
-      return `
-        <div class="p-4 md:p-5 border border-slate-200 rounded-2xl bg-white hover:border-blue-200 transition shadow-sm flex flex-col">
-          <div class="flex justify-between items-start mb-2 gap-2">
-            <div class="min-w-0">
-              <h4 class="font-bold text-slate-800 text-sm md:text-base truncate">${personelSozluk[r.personel_id] || personelAd} <span class="text-xs font-normal text-slate-500 ml-1 hidden sm:inline">${santiyeAd}</span></h4>
-              <span class="text-[10px] md:text-xs text-slate-400"><i class="far fa-clock"></i> ${tarih}</span>
-              ${r.kategori ? `<span class="ml-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">${r.kategori}</span>` : ''}
-              ${r.saha_alani ? `<span class="ml-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200"><i class="fas fa-map-marker-alt text-slate-400"></i> ${r.saha_alani}</span>` : ''}
+      if (aktifMod === 'saglik') {
+        return `
+          <div class="p-4 border-l-4 border-teal-500 border-y border-r rounded-xl bg-white shadow-sm mb-3">
+            <div class="flex justify-between items-center mb-2">
+              <div><span class="px-2 py-1 rounded bg-teal-50 text-teal-700 text-[10px] font-black">${r.kategori}</span><span class="text-[10px] text-slate-400 ml-2">${tarih} | Uzman: ${personelAd}</span></div>
             </div>
-            <span class="px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold border flex-shrink-0 ${riskRenk}">${r.risk_seviyesi || 'BELİRSİZ'}</span>
-          </div>
-          <p class="text-xs md:text-sm text-slate-700 leading-relaxed mt-1">${r.rapor_metni}</p>
-          ${r.ai_aciklama ? `<div class="mt-2 text-[11px] md:text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-dashed border-slate-300"><i class="fas fa-robot text-indigo-500 mr-1"></i> <b>AI:</b> ${r.ai_aciklama}</div>` : ''}
-          ${fotoHTML}
-          <div class="mt-3 border-t border-slate-100 pt-2.5 flex justify-between items-center w-full flex-wrap gap-2">
-            <div class="flex-1 min-w-[200px]">${aksiyonHTML}</div>
-          </div>
-        </div>
-      `;
+            <h4 class="font-bold text-slate-800 text-sm"><i class="fas fa-user-injured text-slate-400 mr-1"></i> ${r.hasta_ad_soyad} <span class="text-xs font-normal">(${r.hasta_yas} Yaş)</span></h4>
+            <div class="mt-2 bg-slate-50 p-3 rounded-lg text-xs text-slate-600 border border-slate-100">
+              ${r.kategori === 'Poliklinik Muayenesi' ? `<p><b>Şikayet:</b> ${r.sikayet || '-'}</p><p><b>Vital:</b> Tansiyon ${r.vital_tansiyon || '-'} | Şeker ${r.vital_seker || '-'}</p><p><b>Tedavi:</b> ${r.tedavi || '-'}</p>` : `<p><b>İş Tanımı:</b> ${r.is_tanimi || '-'}</p><p><b>Kronik/Engel:</b> ${r.kronik_rahatsizlik || '-'} / ${r.calismaya_engel || '-'}</p>`}
+            </div>
+          </div>`;
+      } else {
+        return `
+          <div class="p-4 border-l-4 border-blue-500 border-y border-r rounded-xl bg-white shadow-sm mb-3">
+            <div class="flex justify-between items-center mb-2">
+              <div><span class="px-2 py-1 rounded bg-blue-50 text-blue-700 text-[10px] font-black">${r.kategori}</span><span class="text-[10px] text-slate-400 ml-2">${tarih}</span></div>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${r.risk_seviyesi === 'KRİTİK' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-600'}">${r.risk_seviyesi || 'BELİRSİZ'}</span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm"><i class="fas fa-user-hard-hat text-slate-400 mr-1"></i> ${personelAd} <span class="text-xs font-normal text-slate-500">(${santiye})</span></h4>
+            <p class="mt-2 text-sm text-slate-700 leading-relaxed">${r.rapor_metni}</p>
+          </div>`;
+      }
     }
 
-    // --- AKSİYON FONKSİYONLARI ---
+    async function personelleriGetir() { 
+      const { data } = await db.from('personel').select('*'); 
+      if (data) { 
+        globalPersonelData = data;
+        
+        const roller = [...new Set(data.map(p => p.unvan || p.rol).filter(r => r))];
+        const persRolFiltre = document.getElementById('persRolFiltre');
+        if(persRolFiltre) {
+           persRolFiltre.innerHTML = '<option value="TÜMÜ">Tüm Roller</option>' + roller.map(r => `<option value="${r}">${r}</option>`).join('');
+        }
+
+        personelFiltrele(); 
+      } 
+    }
+
+    function personelFiltrele() {
+      const pSantiye = document.getElementById('persSantiyeFiltre').value;
+      const pRol = document.getElementById('persRolFiltre').value;
+
+      const filtrelenmis = globalPersonelData.filter(p => {
+         const sUyum = pSantiye === 'TÜMÜ' || p.santiye === pSantiye;
+         const rUyum = pRol === 'TÜMÜ' || (p.unvan || p.rol) === pRol;
+         return sUyum && rUyum;
+      });
+
+      const body = document.getElementById('personelTableBody');
+      if(filtrelenmis.length === 0) {
+         body.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Aranan kriterlere uygun personel bulunamadı.</td></tr>`;
+      } else {
+         body.innerHTML = filtrelenmis.map(p => {
+           const isim = p.ad_soyad || 'İsimsiz Personel';
+           return `<tr class="hover:bg-blue-50 transition"><td class="p-4 font-bold text-slate-800 flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold">${isim.charAt(0)}</div>${isim}</td><td class="p-4 text-slate-600">${p.santiye || '-'}</td><td class="p-4"><span class="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-bold">${p.unvan || p.rol}</span></td><td class="p-4 text-right"><button onclick="showProfile('${p.id}')" class="bg-white border text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">İncele</button></td></tr>`
+         }).join('');
+      }
+    }
+
+    // ONARILMIŞ VE HTML'E BAĞLANMIŞ PROFİL FONKSİYONU
+    async function showProfile(personelId) {
+      try {
+        const { data: isgRaporlar } = await db.from('raporlar').select('*').eq('personel_id', personelId);
+        const { data: saglikRaporlar } = await db.from('raporlar_saglik').select('*').eq('personel_id', personelId);
+        
+        let raporlar = [];
+        if(isgRaporlar) raporlar = raporlar.concat(isgRaporlar);
+        if(saglikRaporlar) raporlar = raporlar.concat(saglikRaporlar);
+
+        if(raporlar.length > 0) { 
+          aktifPersonelRaporlari = raporlar;
+          document.getElementById('p-raporListesi').innerHTML = raporlar.map(r => {
+             let rTip = r.hasta_ad_soyad ? 'Sağlık Raporu' : 'İSG Raporu';
+             let color = rTip === 'Sağlık Raporu' ? 'teal' : 'blue';
+             let metin = rTip === 'Sağlık Raporu' ? `[Hasta: ${r.hasta_ad_soyad}] - Şikayet/Tanım: ${r.sikayet || r.is_tanimi || ''}` : (r.rapor_metni || '');
+             
+             return `<div class="p-4 border border-${color}-100 rounded-xl bg-${color}-50 text-sm text-slate-700 flex flex-col gap-1 relative pr-14">
+               <div class="flex justify-between items-center">
+                 <span class="font-bold text-${color}-700 text-xs uppercase">${r.kategori}</span>
+                 <span class="text-slate-400 text-xs">${new Date(r.olusturulma_tarihi).toLocaleDateString()}</span>
+               </div>
+               <p class="mt-1">${metin}</p>
+               <button onclick="tekRaporPdfIndir('${r.id}', '${rTip}')" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white text-${color}-600 hover:bg-${color}-600 hover:text-white border border-${color}-200 p-2.5 rounded-lg shadow-sm transition" title="Bu Raporu PDF Olarak İndir">
+                 <i class="fas fa-file-pdf"></i>
+               </button>
+             </div>`;
+          }).join(''); 
+        } else {
+          document.getElementById('p-raporListesi').innerHTML = '<div class="text-center text-slate-400 py-10">Bu personelin henüz girdiği bir rapor bulunmamaktadır.</div>';
+        }
+
+        // HTML'de oluşturduğumuz profili görünür yapıyoruz
+        const profilModal = document.getElementById('profilModal');
+        if (profilModal) {
+            profilModal.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error("Profil yüklenirken bir hata oluştu:", error);
+      }
+    }
+
+    async function personelRaporlariIndir(personelId, isim) {
+      const { data: isgRaporlar } = await db.from('raporlar').select('*').eq('personel_id', personelId);
+      const { data: saglikRaporlar } = await db.from('raporlar_saglik').select('*').eq('personel_id', personelId);
+      
+      let raporlar = [];
+      if(isgRaporlar) raporlar = raporlar.concat(isgRaporlar);
+      if(saglikRaporlar) raporlar = raporlar.concat(saglikRaporlar);
+
+      if (raporlar.length === 0) {
+         return alert("İndirilecek rapor bulunamadı.");
+      }
+
+      let csvRows = [];
+      csvRows.push(["Tarih", "Kategori", "Saha / Alan", "Risk Seviyesi", "Rapor Metni / Detay"]);
+
+      raporlar.forEach(r => {
+         const tarih = new Date(r.olusturulma_tarihi).toLocaleDateString('tr-TR');
+         const kat = r.kategori || 'Genel';
+         const alan = r.saha_alani || 'Belirtilmemiş';
+         const risk = r.risk_seviyesi || '-';
+         
+         let metin = '';
+         if (r.hasta_ad_soyad) {
+            metin = `Hasta: ${r.hasta_ad_soyad} - Not: ${r.sikayet || r.is_tanimi || ''}`;
+         } else {
+            metin = r.rapor_metni || '';
+         }
+         
+         csvRows.push([tarih, kat, alan, risk, metin]);
+      });
+
+      const dosyaAdi = `Raporlar_${isim.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('tr-TR')}.csv`;
+      csvIndir(dosyaAdi, csvRows);
+    }
+
     function aksiyonModalAc(raporId) { 
       seciliRaporId = raporId; 
       document.getElementById('sorumluSecim').innerHTML = '<option value="">Görevlendirilecek personeli seçin...</option>' + Object.keys(personelSozluk).map(id => `<option value="${id}">${personelSozluk[id]}</option>`).join(''); 
@@ -616,229 +631,71 @@
       if(error) alert("Hata oluştu."); 
       else { aksiyonModalKapat(); verileriYukle(); } 
     }
-    
-    async function aksiyonCozuldu(aksiyonId) { 
-      if(!confirm("Emin misiniz?")) return; 
-      const { error } = await db.from('aksiyonlar').update({ durum: 'ÇÖZÜLDÜ', cozum_tarihi: new Date().toISOString() }).eq('id', aksiyonId); 
-      if(!error) verileriYukle(); 
-    }
 
-    // --- PERSONEL FONKSİYONLARI ---
-    async function personelleriGetir() { 
-      const { data } = await db.from('personel').select('*'); 
-      if (data) { 
-        document.getElementById('personelTableBody').innerHTML = data.map(p => {
-          // Hata koruması eklendi
-          const isim = p.ad_soyad || 'İsimsiz Personel';
-          const basHarf = isim.charAt(0);
-          
-          return `<tr class="hover:bg-blue-50 transition">
-            <td class="p-4 font-bold text-slate-800 flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold">${basHarf}</div>${isim}</td>
-            <td class="p-4 text-slate-600 font-medium">${p.santiye || '-'}</td>
-            <td class="p-4"><span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border">${p.unvan || p.rol}</span></td>
-            <td class="p-4 text-right"><button onclick="showProfile('${p.id}')" class="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">İncele</button></td>
-          </tr>`
-        }).join(''); 
-      } 
-    }
+    function tekRaporPdfIndir(raporId, tip) {
+      const r = aktifPersonelRaporlari.find(x => x.id == raporId);
+      if (!r) return alert("Rapor bulunamadı.");
 
-    async function showProfile(personelId) { 
-      document.getElementById('sayfaBasligi').textContent = "Personel Zeka Profili"; 
-      const { data: p } = await db.from('personel').select('*').eq('id', personelId).single(); 
-      const { data: raporlar } = await db.from('raporlar').select('*, personel(ad_soyad, santiye), aksiyonlar(*)').eq('personel_id', personelId).order('olusturulma_tarihi', {ascending: false}); 
-      const tumRaporlar = raporlar && raporlar.length > 0 ? raporlar.map(r => r.rapor_metni).join(' | ') : "Rapor yok"; 
-      
-      const isim = p.ad_soyad || 'İsimsiz Personel';
-      const basHarf = isim.charAt(0);
+      const tarih = new Date(r.olusturulma_tarihi).toLocaleString('tr-TR');
+      let icerikHTML = "";
+      let baslik = tip === 'Sağlık Raporu' ? "Tıbbi Revir Kaydı" : "İSG Saha Raporu";
+      let renk = tip === 'Sağlık Raporu' ? "#0f766e" : "#1d4ed8";
 
-      document.getElementById('contentArea').innerHTML = `
-        <button onclick="renderView('personel')" class="mb-6 text-slate-500 hover:text-blue-900 font-bold bg-white px-3 py-1.5 rounded-xl border shadow-sm flex items-center"><i class="fas fa-arrow-left mr-2"></i> Listeye Dön</button>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div class="bg-white p-6 rounded-3xl shadow-sm border flex flex-col items-center h-fit">
-            <div class="w-20 h-20 bg-white border-4 rounded-full flex items-center justify-center text-blue-900 text-3xl font-black mb-3 shadow">${basHarf}</div>
-            <h2 class="text-xl font-black text-slate-800">${isim}</h2>
-            <p class="text-slate-500 mb-6 font-medium text-sm">${p.unvan || 'Personel'} • ${p.santiye || 'Şantiye'}</p>
-            <button id="aiBtn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2"><i class="fas fa-brain"></i> Derin AI Analizi</button>
-            <div id="aiSonucAlani" class="hidden w-full mt-6 text-left"><div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100"><div id="analizYazisi" class="text-sm text-slate-800 space-y-3 mt-2"></div></div></div>
+      if (tip === 'Sağlık Raporu') {
+        icerikHTML = `
+          <p><strong>Hasta/Personel:</strong> ${r.hasta_ad_soyad} (${r.hasta_yas} Yaş, ${r.hasta_cinsiyet})</p>
+          <p><strong>Kategori:</strong> ${r.kategori}</p>
+          <p><strong>Şikayet / İş Tanımı:</strong> ${r.sikayet || r.is_tanimi || '-'}</p>
+          <p><strong>Vital Bulgular:</strong> Tansiyon: ${r.vital_tansiyon || '-'} | Şeker: ${r.vital_seker || '-'}</p>
+          <p><strong>Tedavi / Müdahale:</strong> ${r.tedavi || '-'}</p>
+          <p><strong>Kronik Rahatsızlık:</strong> ${r.kronik_rahatsizlik || '-'}</p>
+          <p><strong>Çalışmaya Engel:</strong> ${r.calismaya_engel || '-'}</p>
+          <p><strong>Ekstra Notlar:</strong> ${r.ekstra_not || '-'}</p>
+        `;
+      } else {
+        icerikHTML = `
+          <p><strong>Saha/Alan:</strong> ${r.saha_alani || 'Belirtilmemiş'}</p>
+          <p><strong>Kategori:</strong> ${r.kategori}</p>
+          <p><strong>Risk Seviyesi:</strong> ${r.risk_seviyesi || 'BELİRSİZ'}</p>
+          <p><strong>Rapor Detayı / Tespit:</strong></p>
+          <p style="padding: 15px; background: #f8fafc; border-left: 4px solid ${renk}; margin-top: 10px; border-radius: 4px;">${r.rapor_metni}</p>
+        `;
+      }
+
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>ArCiv Rapor Çıktısı - ${tarih}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+            .header { border-bottom: 3px solid ${renk}; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+            .header h1 { margin: 0; color: ${renk}; font-size: 24px; text-transform: uppercase; }
+            .header p { margin: 0; font-size: 12px; color: #666; font-weight: bold; }
+            .content { background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }
+            .content p { margin-bottom: 10px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${baslik}</h1>
+            <p>Kayıt Tarihi: ${tarih}</p>
           </div>
-          <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border"><div id="raporListesi" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar"></div></div>
-        </div>`; 
-      
-      if(raporlar && raporlar.length > 0) { 
-        document.getElementById('raporListesi').innerHTML = raporlar.map(r => olusturRaporKarti(r)).join(''); 
-      } 
-      
-      document.getElementById('aiBtn').addEventListener('click', function() { calistirAI(tumRaporlar); }); 
+          <div class="content">
+            ${icerikHTML}
+          </div>
+          <div class="footer">Bu belge ArCiv Operasyon Sistemi tarafından otomatik olarak oluşturulmuştur.</div>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          <\/script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
     }
 
-    async function calistirAI(metin) { 
-      if (metin === "Rapor yok") return alert("Rapor bulunamadı!"); 
-      const btn = document.getElementById('aiBtn'); 
-      const sonucAlani = document.getElementById('aiSonucAlani'); 
-      const analizYazisi = document.getElementById('analizYazisi'); 
-      
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Analiz Ediliyor...`; btn.disabled = true; 
-      const prompt = `İSG uzmanısın. Raporlardan çalışan profili çıkar (1.İSG, 2.Psikoloji, 3.Puan). Raporlar: ${metin}`; 
-      
-      try { 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`; 
-        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }); 
-        const result = await response.json(); 
-        let analiz = result.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 block mt-3 mb-1 text-sm font-bold">$1</strong>').replace(/\n/g, '<br>'); 
-        sonucAlani.classList.remove('hidden'); analizYazisi.innerHTML = analiz; 
-      } catch(e) { 
-        alert("Yoğunluk var."); 
-      } finally { 
-        btn.innerHTML = `<i class="fas fa-brain"></i> Derin AI Analizi`; btn.disabled = false; 
-      } 
-    }
-
-    // --- FİNANS FONKSİYONLARI ---
-    async function finansVerileriniYukle() { 
-      const seciliYil = document.getElementById('filtreYil').value; 
-      const seciliAy = document.getElementById('filtreAy').value; 
-      let sorgu = db.from('puantaj_maliyet').select('*').eq('donem_yil', seciliYil); 
-      if (seciliAy !== 'TÜMÜ') { sorgu = sorgu.eq('donem_ay', seciliAy); } 
-      
-      const { data: finanslar, error } = await sorgu.order('donem_ay', {ascending: false}).order('olusturulma_tarihi', {ascending: false}); 
-      const tableBody = document.getElementById('finansTableBody'); 
-      
-      if(error || !finanslar || finanslar.length === 0) { 
-        tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Kayıt bulunamadı.</td></tr>`; 
-        document.getElementById('toplamNetMaas').textContent = "₺0"; document.getElementById('toplamSgkKesintisi').textContent = "₺0"; document.getElementById('toplamBrutMaliyet').textContent = "₺0"; 
-        globalFinansMetni = ""; 
-        return; 
-      } 
-      
-      aktifFinansData = finanslar; 
-      let toplamNet = 0, toplamSgk = 0, toplamBrut = 0; 
-      let raporMetniBirikimi = []; 
-      
-      tableBody.innerHTML = finanslar.map(f => { 
-        toplamNet += f.net_maas; toplamSgk += f.sgk_kesintisi; toplamBrut += f.brut_maas; 
-        const pIsim = personelSozluk[f.personel_id] || "Bilinmeyen Personel"; 
-        raporMetniBirikimi.push(`${pIsim} (${f.donem_ay} ${f.donem_yil}): Net=${f.net_maas}, SGK=${f.sgk_kesintisi}, Brüt=${f.brut_maas}, Ç.Gün=${f.calisma_gunu}`); 
-        
-        return `<tr class="hover:bg-slate-50 transition font-medium"><td class="p-4 font-bold text-slate-800">${pIsim}</td><td class="p-4 text-slate-500">${f.donem_ay} ${f.donem_yil}</td><td class="p-4"><span class="bg-slate-100 px-1.5 py-0.5 rounded">${f.calisma_gunu} Ç</span> / <span class="bg-slate-100 px-1.5 py-0.5 rounded">${f.hafta_tatili} HT</span></td><td class="p-4 text-emerald-600 font-bold">₺${f.net_maas.toLocaleString('tr-TR')}</td><td class="p-4 text-amber-600 font-bold">₺${f.sgk_kesintisi.toLocaleString('tr-TR')}</td><td class="p-4 text-blue-900 font-black">₺${f.brut_maas.toLocaleString('tr-TR')}</td><td class="p-4 text-center"><button onclick="finansModalAc('${f.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-sm shadow-sm"><i class="fas fa-edit"></i></button></td></tr>`; 
-      }).join(''); 
-      
-      document.getElementById('toplamNetMaas').textContent = `₺${toplamNet.toLocaleString('tr-TR')}`; 
-      document.getElementById('toplamSgkKesintisi').textContent = `₺${toplamSgk.toLocaleString('tr-TR')}`; 
-      document.getElementById('toplamBrutMaliyet').textContent = `₺${toplamBrut.toLocaleString('tr-TR')}`; 
-      globalFinansMetni = raporMetniBirikimi.join(' | '); 
-    }
-
-    function finansModalAc(kayitId = null) { 
-      duzenlenenFinansId = kayitId; 
-      document.getElementById('finansPersonelSecim').innerHTML = '<option value="">Personel Seçin...</option>' + Object.keys(personelSozluk).map(id => `<option value="${id}">${personelSozluk[id]}</option>`).join(''); 
-      
-      if (kayitId) { 
-        document.getElementById('finansModalBaslik').innerHTML = `<i class="fas fa-edit text-blue-600 mr-2"></i> Kaydı Düzenle`; 
-        const kayit = aktifFinansData.find(k => k.id === kayitId); 
-        if(kayit) { 
-          document.getElementById('finansModalYil').value = kayit.donem_yil; 
-          document.getElementById('finansModalAy').value = kayit.donem_ay; 
-          document.getElementById('finansPersonelSecim').value = kayit.personel_id; 
-          document.getElementById('finansNetMaas').value = kayit.net_maas; 
-          document.getElementById('finansSgkKesintisi').value = kayit.sgk_kesintisi; 
-          document.getElementById('finansCalismaGunu').value = kayit.calisma_gunu; 
-          document.getElementById('finansHtGunu').value = kayit.hafta_tatili; 
-          otomatikBrutHesapla(); 
-        } 
-      } else { 
-        document.getElementById('finansModalBaslik').innerHTML = `<i class="fas fa-plus-circle text-blue-600 mr-2"></i> Yeni Kayıt Ekle`; 
-        document.getElementById('finansPersonelSecim').value = ""; 
-        document.getElementById('finansNetMaas').value = ""; 
-        document.getElementById('finansSgkKesintisi').value = ""; 
-        document.getElementById('finansBrutMaas').value = ""; 
-        document.getElementById('finansCalismaGunu').value = "22"; 
-        document.getElementById('finansHtGunu').value = "8"; 
-      } 
-      document.getElementById('finansModal').classList.remove('hidden'); 
-    }
-    
-    function finansModalKapat() { 
-      document.getElementById('finansModal').classList.add('hidden'); 
-      duzenlenenFinansId = null; 
-    }
-    
-    function otomatikBrutHesapla() { 
-      const net = parseFloat(document.getElementById('finansNetMaas').value) || 0; 
-      const sgk = parseFloat(document.getElementById('finansSgkKesintisi').value) || 0; 
-      document.getElementById('finansBrutMaas').value = (net + sgk).toFixed(2); 
-    }
-    
-    async function finansKaydet() { 
-      const yil = document.getElementById('finansModalYil').value; 
-      const ay = document.getElementById('finansModalAy').value; 
-      const pId = document.getElementById('finansPersonelSecim').value; 
-      const net = parseFloat(document.getElementById('finansNetMaas').value); 
-      const sgk = parseFloat(document.getElementById('finansSgkKesintisi').value); 
-      const brut = parseFloat(document.getElementById('finansBrutMaas').value); 
-      const cGunu = parseInt(document.getElementById('finansCalismaGunu').value) || 0; 
-      const htGunu = parseInt(document.getElementById('finansHtGunu').value) || 0; 
-      
-      if(!pId || isNaN(net) || isNaN(sgk)) return alert("Eksik bilgi."); 
-      
-      const btn = document.getElementById('finansKaydetBtn'); 
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Kaydediliyor...`; btn.disabled = true; 
-      
-      const veriPaketi = { personel_id: pId, donem_ay: ay, donem_yil: parseInt(yil), net_maas: net, sgk_kesintisi: sgk, brut_maas: brut, calisma_gunu: cGunu, hafta_tatili: htGunu }; 
-      let error = null; 
-      
-      if (duzenlenenFinansId) { 
-        const { error: updErr } = await db.from('puantaj_maliyet').update(veriPaketi).eq('id', duzenlenenFinansId); 
-        error = updErr; 
-      } else { 
-        const { data: kontrol } = await db.from('puantaj_maliyet').select('id').eq('personel_id', pId).eq('donem_ay', ay).eq('donem_yil', yil); 
-        if (kontrol && kontrol.length > 0) { 
-          if(!confirm("Zaten kaydı var. Üzerine yazılsın mı?")) { btn.innerHTML = `Kaydet`; btn.disabled = false; return; } 
-          const { error: updErr } = await db.from('puantaj_maliyet').update(veriPaketi).eq('id', kontrol[0].id); 
-          error = updErr; 
-        } else { 
-          const { error: insErr } = await db.from('puantaj_maliyet').insert(veriPaketi); 
-          error = insErr; 
-        } 
-      } 
-      
-      btn.innerHTML = `Kaydet`; btn.disabled = false; 
-      if(error) { alert("Hata oluştu."); } else { finansModalKapat(); finansVerileriniYukle(); } 
-    }
-    
-    async function calistirFinansAI() { 
-      if(!globalFinansMetni) return alert("Veri yok!"); 
-      
-      const ozelKomut = document.getElementById('aiFinansKomut').value.trim(); 
-      const seciliAy = document.getElementById('filtreAy').value; 
-      const seciliYil = document.getElementById('filtreYil').value; 
-      
-      const btn = document.getElementById('aiFinansBtn'); 
-      const sonucAlani = document.getElementById('aiFinansSonucAlani'); 
-      const analizYazisi = document.getElementById('finansAnalizYazisi'); 
-      
-      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Zeka Devrede...`; btn.disabled = true; 
-      let prompt = `Kurumsal finans analistisin. Dönem: ${seciliAy} ${seciliYil}. `; 
-      
-      if(ozelKomut) { 
-        prompt += `ÖZEL İSTEK: "${ozelKomut}"\nBuna odaklan.`; 
-      } else { 
-        prompt += `3 başlıkta analiz et: 1. MALİYET VE BÜTÇE 2. ANOMALİ 3. YÖNETİCİ ÖZETİ.`; 
-      } 
-      
-      prompt += ` Veriler: ${globalFinansMetni}`; 
-      
-      try { 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`; 
-        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }); 
-        const result = await response.json(); 
-        let analiz = result.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-900 block mt-4 mb-1 text-sm font-bold">$1</strong>').replace(/\n/g, '<br>'); 
-        sonucAlani.classList.remove('hidden'); analizYazisi.innerHTML = analiz; 
-      } catch(e) { 
-        alert("Yoğunluk var."); 
-      } finally { 
-        btn.innerHTML = `<i class="fas fa-analytics"></i> AI Raporu Üret`; btn.disabled = false; 
-      } 
-    }
   </script>
 </body>
 </html>

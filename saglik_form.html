@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArCiv — Sağlık & Revir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="config.js"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    input[type="radio"]:checked + label.tab-btn { background-color: #0f766e; color: white; border-color: #0f766e; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 pb-10">
+
+  <!-- DURUM BARLARI -->
+  <div id="offlineBanner" class="hidden bg-red-600 text-white text-center py-2.5 text-xs font-bold shadow-md sticky top-0 z-50">
+    <i class="fas fa-wifi-slash mr-2 animate-bounce"></i> BAĞLANTI YOK — Kayıtlar Cihaza Alınıyor.
+  </div>
+  <div id="syncBanner" class="hidden bg-teal-600 text-white text-center py-2.5 text-xs font-bold shadow-md sticky top-0 z-50 cursor-pointer animate-pulse" onclick="senkronizeEt()">
+    <i class="fas fa-cloud-upload-alt mr-2"></i> İletilmeyen <span id="syncSayi" class="bg-white text-teal-700 px-1.5 py-0.5 rounded-full mx-1">0</span> kayıt var. Tıklayın.
+  </div>
+
+  <div class="p-4 md:p-6 max-w-lg mx-auto space-y-5">
+    
+    <!-- ÜST NAVİGASYON -->
+    <nav class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-teal-600 text-white rounded-lg flex items-center justify-center shadow-md"><i class="fas fa-heartbeat text-sm"></i></div>
+        <h1 class="text-base font-black text-slate-800 tracking-wider">ArCiv<span class="text-teal-600"> SAĞLIK</span></h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleModal()" class="text-[10px] font-bold text-slate-500 hover:text-teal-600 transition bg-slate-100 px-3 py-2 rounded-xl">
+          <i class="fas fa-history"></i> Defter
+        </button>
+        <button onclick="cikisYap()" class="text-[10px] font-bold text-red-500 hover:text-red-700 transition bg-red-50 px-3 py-2 rounded-xl">
+          <i class="fas fa-power-off"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- SAĞLIK PERSONELİ & KONUM KARTI -->
+    <div class="bg-gradient-to-br from-teal-800 to-slate-800 p-5 rounded-2xl shadow-md text-white flex justify-between items-center relative overflow-hidden">
+      <div class="absolute right-0 bottom-0 opacity-5 text-8xl transform translate-x-2 translate-y-4"><i class="fas fa-user-md"></i></div>
+      <div class="relative z-10 w-full flex justify-between items-start">
+        <div>
+          <p class="text-[10px] text-teal-200 uppercase tracking-widest mb-0.5">Nöbetçi Personel</p>
+          <h2 id="saglikciAd" class="text-sm font-black tracking-tight mb-2">Yükleniyor...</h2>
+        </div>
+        <!-- KONUM KUTUSU -->
+        <button type="button" onclick="konumYenile()" id="gpsKutusu" class="text-[10px] font-mono bg-white/10 px-2.5 py-2 rounded-lg backdrop-blur-sm border border-white/20 flex flex-col items-end gap-1 shadow-sm hover:bg-white/20 transition cursor-pointer text-right">
+           <span><i class="fas fa-spinner fa-spin text-teal-300"></i> GPS Aranıyor</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- DİNAMİK FORM SEÇİCİ -->
+    <div class="bg-slate-200 p-1.5 rounded-2xl flex relative shadow-inner">
+      <div class="w-1/2">
+        <input type="radio" name="formTipi" id="tipMuayene" value="muayene" class="peer hidden" checked onchange="formGecis()">
+        <label for="tipMuayene" class="tab-btn cursor-pointer block text-center py-3 text-xs md:text-sm font-bold rounded-xl text-slate-500 transition-all">
+          🩺 Poliklinik Muayene
+        </label>
+      </div>
+      <div class="w-1/2">
+        <input type="radio" name="formTipi" id="tipIseGiris" value="isegiris" class="peer hidden" onchange="formGecis()">
+        <label for="tipIseGiris" class="tab-btn cursor-pointer block text-center py-3 text-xs md:text-sm font-bold rounded-xl text-slate-500 transition-all">
+          📝 İşe Giriş Raporu
+        </label>
+      </div>
+    </div>
+
+    <!-- ANA FORM ALANI -->
+    <div class="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+      
+      <!-- HASTA KİMLİK BİLGİLERİ -->
+      <div>
+        <h3 class="text-xs font-black text-teal-700 uppercase tracking-wider mb-3 border-b-2 border-teal-50 pb-2"><i class="fas fa-id-card mr-1"></i> Hasta / Personel Bilgileri</h3>
+        <div class="space-y-3">
+          <div class="relative">
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">Adı Soyadı *</label>
+            <input type="text" id="hastaAd" class="w-full border-2 border-slate-100 rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-slate-800 focus:border-teal-500 outline-none bg-slate-50" placeholder="Örn: Ahmet Yılmaz">
+            <button type="button" onclick="sesleYazDinamik('hastaAd', this)" class="absolute right-3 top-7 text-slate-400 hover:text-teal-600 transition"><i class="fas fa-microphone"></i></button>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 mb-1">Yaşı *</label>
+              <input type="number" id="hastaYas" class="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-teal-500 outline-none bg-slate-50">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 mb-1">Cinsiyeti</label>
+              <select id="hastaCinsiyet" class="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-teal-500 outline-none bg-slate-50">
+                <option value="Erkek">Erkek</option>
+                <option value="Kadın">Kadın</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MUAYENE ALANI -->
+      <div id="muayeneBolumu" class="space-y-5">
+        <h3 class="text-xs font-black text-rose-600 uppercase tracking-wider border-b-2 border-rose-50 pb-2"><i class="fas fa-stethoscope mr-1"></i> Klinik Bulgular</h3>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">Tansiyon (Vital)</label>
+            <input type="text" id="muayeneTansiyon" class="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-rose-400 outline-none bg-slate-50" placeholder="Örn: 120/80">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">Şeker (Vital)</label>
+            <input type="number" id="muayeneSeker" class="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-rose-400 outline-none bg-slate-50" placeholder="Örn: 95">
+          </div>
+        </div>
+
+        <div class="relative">
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">Şikayeti *</label>
+          <textarea id="muayeneSikayet" class="w-full border-2 border-slate-100 rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-slate-800 focus:border-rose-400 outline-none bg-slate-50 h-20" placeholder="Hastanın geliş şikayeti nedir?"></textarea>
+          <button type="button" onclick="sesleYazDinamik('muayeneSikayet', this)" class="absolute right-3 bottom-3 text-slate-400 hover:text-rose-500 transition p-2 bg-white rounded-full shadow-sm border border-slate-100"><i class="fas fa-microphone"></i></button>
+        </div>
+
+        <div class="relative">
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">Uygulanan Tedavi / İlaç</label>
+          <textarea id="muayeneTedavi" class="w-full border-2 border-slate-100 rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-slate-800 focus:border-rose-400 outline-none bg-slate-50 h-20" placeholder="Yapılan müdahale, verilen ilaçlar..."></textarea>
+          <button type="button" onclick="sesleYazDinamik('muayeneTedavi', this)" class="absolute right-3 bottom-3 text-slate-400 hover:text-rose-500 transition p-2 bg-white rounded-full shadow-sm border border-slate-100"><i class="fas fa-microphone"></i></button>
+        </div>
+      </div>
+
+      <!-- İŞE GİRİŞ ALANI -->
+      <div id="iseGirisBolumu" class="space-y-5 hidden">
+        <h3 class="text-xs font-black text-blue-600 uppercase tracking-wider border-b-2 border-blue-50 pb-2"><i class="fas fa-file-medical-alt mr-1"></i> İşe Giriş Detayları</h3>
+        
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">İşe Giriş Tarihi *</label>
+          <input type="date" id="girisTarihi" class="w-full border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-blue-500 outline-none bg-slate-50">
+        </div>
+
+        <div class="relative">
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">Yapacak İşin Tanımı *</label>
+          <input type="text" id="girisIsTanimi" class="w-full border-2 border-slate-100 rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-slate-800 focus:border-blue-500 outline-none bg-slate-50" placeholder="Örn: Yüksekte çalışma">
+          <button type="button" onclick="sesleYazDinamik('girisIsTanimi', this)" class="absolute right-3 top-7 text-slate-400 hover:text-blue-600 transition"><i class="fas fa-microphone"></i></button>
+        </div>
+
+        <div class="relative">
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">Kronik Rahatsızlığı Var mı?</label>
+          <input type="text" id="girisKronik" class="w-full border-2 border-slate-100 rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-slate-800 focus:border-blue-500 outline-none bg-slate-50" placeholder="Yoksa 'Yok' yazın.">
+          <button type="button" onclick="sesleYazDinamik('girisKronik', this)" class="absolute right-3 top-7 text-slate-400 hover:text-blue-600 transition"><i class="fas fa-microphone"></i></button>
+        </div>
+
+        <div class="relative">
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">Çalışmasında Engel Var mı?</label>
+          <input type="text" id="girisEngel" class="w-full border-2 border-slate-100 rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-slate-800 focus:border-blue-500 outline-none bg-slate-50" placeholder="Örn: Ağır kaldıramaz...">
+          <button type="button" onclick="sesleYazDinamik('girisEngel', this)" class="absolute right-3 top-7 text-slate-400 hover:text-blue-600 transition"><i class="fas fa-microphone"></i></button>
+        </div>
+      </div>
+
+      <!-- ORTAK ALAN: NOTLAR -->
+      <div class="pt-4 border-t border-slate-100 relative">
+        <label class="block text-[11px] font-bold text-slate-400 mb-1">Ekstra Notlar (İsteğe Bağlı)</label>
+        <textarea id="ortakNot" class="w-full p-4 border-2 border-slate-100 rounded-2xl h-20 focus:border-teal-500 outline-none transition text-sm bg-slate-50 pr-12" placeholder="Eklemek istediğiniz diğer detaylar..."></textarea>
+        <button type="button" onclick="sesleYazDinamik('ortakNot', this)" class="absolute right-3 bottom-3 text-slate-400 hover:text-teal-500 transition p-2 bg-white rounded-full shadow-sm border border-slate-100"><i class="fas fa-microphone"></i></button>
+      </div>
+
+      <!-- BUTONLAR: İPTAL (GİZLİ) VE KAYDET -->
+      <div class="flex gap-2">
+        <button type="button" id="iptalBtn" onclick="duzenlemeIptal()" class="hidden w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-sm py-4 rounded-2xl shadow-sm transition">
+          İptal
+        </button>
+        <button type="button" id="gonderBtn" onclick="kaydet()" class="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-black text-sm py-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fas fa-check-circle"></i> Kaydı Sisteme İşle
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GEÇMİŞ MODAL -->
+  <div id="raporModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+        <h3 class="font-black text-slate-800"><i class="fas fa-history text-teal-600 mr-2"></i>Son Tıbbi Kayıtlar</h3>
+        <button onclick="toggleModal()" class="text-slate-400 hover:text-red-500 text-lg"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="raporListesi" class="p-5 space-y-3 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    let enlem = 0, boylam = 0;
+    
+    // Düzenleme mekanizması için yeni global değişkenler
+    let duzenlenenKayitId = null;
+    let sonRaporlarData = [];
+
+    window.onload = async () => {
+      const pId = localStorage.getItem('kullanici_id');
+      if (!pId) { window.location.href = 'index.html'; return; }
+      
+      document.getElementById('saglikciAd').textContent = localStorage.getItem('ad_soyad') || 'Sağlık Personeli';
+      
+      konumYenile(); 
+      raporlariGetir(); 
+      baglantiKontrolu(); 
+    };
+
+    // DİNAMİK SESLE YAZMA MOTORU
+    function sesleYazDinamik(hedefInputId, butonElementi) {
+      if (!('webkitSpeechRecognition' in window)) return alert("Tarayıcınız sesle yazmayı desteklemiyor.");
+      const rec = new webkitSpeechRecognition(); 
+      rec.lang = 'tr-TR'; 
+      rec.continuous = false; 
+      const hedefKutu = document.getElementById(hedefInputId);
+      
+      rec.onstart = () => { 
+        butonElementi.classList.remove('text-slate-400');
+        butonElementi.classList.add('text-red-500', 'animate-pulse'); 
+      };
+      rec.onresult = e => { 
+        hedefKutu.value += (hedefKutu.value ? " " : "") + e.results[0][0].transcript; 
+      };
+      rec.onend = () => { 
+        butonElementi.classList.remove('text-red-500', 'animate-pulse');
+        butonElementi.classList.add('text-slate-400');
+      };
+      rec.start();
+    }
+
+    // KONUM YENİLEME SİSTEMİ
+    function konumYenile() {
+      const gpsKutu = document.getElementById('gpsKutusu');
+      gpsKutu.innerHTML = `<span class="text-teal-200"><i class="fas fa-spinner fa-spin"></i> Konum Alınıyor...</span>`;
+      
+      navigator.geolocation.getCurrentPosition(
+        pos => { 
+          enlem = pos.coords.latitude; 
+          boylam = pos.coords.longitude; 
+          gpsKutu.innerHTML = `
+            <span class="text-emerald-300 font-bold"><i class="fas fa-check-circle"></i> Konum Alındı</span>
+            <span class="text-[9px] opacity-70">${enlem.toFixed(4)}, ${boylam.toFixed(4)} <i class="fas fa-sync-alt ml-1"></i></span>
+          `;
+        }, 
+        err => { 
+          gpsKutu.innerHTML = `
+            <span class="text-amber-300 font-bold"><i class="fas fa-exclamation-triangle"></i> Konum Bulunamadı</span>
+            <span class="text-[9px] opacity-70">Tekrar denemek için tıkla</span>
+          `;
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    // FORM GEÇİŞ MOTORU
+    function formGecis() {
+      const formTipi = document.querySelector('input[name="formTipi"]:checked').value;
+      const muayeneBolumu = document.getElementById('muayeneBolumu');
+      const iseGirisBolumu = document.getElementById('iseGirisBolumu');
+
+      if (formTipi === 'muayene') {
+        muayeneBolumu.classList.remove('hidden'); iseGirisBolumu.classList.add('hidden');
+      } else {
+        muayeneBolumu.classList.add('hidden'); iseGirisBolumu.classList.remove('hidden');
+      }
+    }
+
+    function toggleModal() { document.getElementById('raporModal').classList.toggle('hidden'); }
+    function cikisYap() { localStorage.clear(); window.location.href = 'index.html'; }
+
+    window.addEventListener('online', baglantiKontrolu);
+    window.addEventListener('offline', baglantiKontrolu);
+
+    function baglantiKontrolu() {
+      const offlineBanner = document.getElementById('offlineBanner');
+      const syncBanner = document.getElementById('syncBanner');
+      const kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
+      if (!navigator.onLine) { 
+        offlineBanner.classList.remove('hidden'); syncBanner.classList.add('hidden'); 
+      } else {
+        offlineBanner.classList.add('hidden');
+        if (kuyruk.length > 0) { 
+          syncBanner.classList.remove('hidden'); document.getElementById('syncSayi').textContent = kuyruk.length; senkronizeEt(); 
+        } else { syncBanner.classList.add('hidden'); }
+      }
+    }
+
+    // --- YENİ EKLENEN: DÜZENLEME MODUNA GEÇİŞ ---
+    function duzenleModunaGec(id) {
+      const kayit = sonRaporlarData.find(r => r.id === id);
+      if (!kayit) return;
+
+      // 1. Modalı Kapat
+      toggleModal();
+
+      // 2. ID'yi Hafızaya Al
+      duzenlenenKayitId = kayit.id;
+
+      // 3. Ortak Alanları Doldur
+      document.getElementById('hastaAd').value = kayit.hasta_ad_soyad || '';
+      document.getElementById('hastaYas').value = kayit.hasta_yas || '';
+      document.getElementById('hastaCinsiyet').value = kayit.hasta_cinsiyet || 'Erkek';
+      document.getElementById('ortakNot').value = kayit.ekstra_not || '';
+
+      // 4. Kategoriye Göre Formu Seç ve Özel Alanları Doldur
+      if (kayit.kategori === 'Poliklinik Muayenesi') {
+        document.getElementById('tipMuayene').checked = true;
+        formGecis(); // Ekranı Muayeneye Çevir
+        document.getElementById('muayeneTansiyon').value = kayit.vital_tansiyon || '';
+        document.getElementById('muayeneSeker').value = kayit.vital_seker || '';
+        document.getElementById('muayeneSikayet').value = kayit.sikayet || '';
+        document.getElementById('muayeneTedavi').value = kayit.tedavi || '';
+      } else {
+        document.getElementById('tipIseGiris').checked = true;
+        formGecis(); // Ekranı İşe Girişe Çevir
+        document.getElementById('girisTarihi').value = kayit.ise_giris_tarihi || '';
+        document.getElementById('girisIsTanimi').value = kayit.is_tanimi || '';
+        document.getElementById('girisKronik').value = kayit.kronik_rahatsizlik || '';
+        document.getElementById('girisEngel').value = kayit.calismaya_engel || '';
+      }
+
+      // 5. Butonların Görünümünü Değiştir
+      const btn = document.getElementById('gonderBtn');
+      btn.innerHTML = `<i class="fas fa-sync-alt"></i> Kaydı Güncelle`;
+      btn.classList.remove('from-teal-600', 'to-teal-700');
+      btn.classList.add('from-blue-600', 'to-blue-700'); // Düzenleme modunda mavi olur
+      document.getElementById('iptalBtn').classList.remove('hidden');
+      
+      // En yukarı kaydır
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- YENİ EKLENEN: DÜZENLEME İPTAL ---
+    function duzenlemeIptal() {
+      duzenlenenKayitId = null;
+      formSifirla();
+      
+      const btn = document.getElementById('gonderBtn');
+      btn.innerHTML = `<i class="fas fa-check-circle"></i> Kaydı Sisteme İşle`;
+      btn.classList.add('from-teal-600', 'to-teal-700');
+      btn.classList.remove('from-blue-600', 'to-blue-700');
+      document.getElementById('iptalBtn').classList.add('hidden');
+    }
+
+    function formSifirla() {
+      document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea').forEach(el => el.value = '');
+    }
+
+    // KAYDET VE GÜNCELLE BİR ARADA (GÜNCELLENDİ)
+    async function kaydet() {
+      const formTipi = document.querySelector('input[name="formTipi"]:checked').value;
+      const ad = document.getElementById('hastaAd').value.trim();
+      const yas = parseInt(document.getElementById('hastaYas').value) || null;
+      const cinsiyet = document.getElementById('hastaCinsiyet').value;
+      const not = document.getElementById('ortakNot').value.trim() || null;
+
+      if (!ad || !yas) { alert("Lütfen hastanın adını ve yaşını eksiksiz girin."); return; }
+
+      let veriPaketi = {
+        personel_id: localStorage.getItem('kullanici_id'),
+        saha_alani: 'Revir / Klinik',
+        hasta_ad_soyad: ad,
+        hasta_yas: yas,
+        hasta_cinsiyet: cinsiyet,
+        ekstra_not: not,
+        gps_enlem: enlem,
+        gps_boylam: boylam
+      };
+
+      if (formTipi === 'muayene') {
+        const sikayet = document.getElementById('muayeneSikayet').value.trim();
+        if(!sikayet) { alert("Muayene için 'Şikayeti' alanını doldurmak zorunludur."); return; }
+
+        veriPaketi.kategori = "Poliklinik Muayenesi";
+        veriPaketi.vital_tansiyon = document.getElementById('muayeneTansiyon').value.trim() || null;
+        veriPaketi.vital_seker = parseInt(document.getElementById('muayeneSeker').value) || null;
+        veriPaketi.sikayet = sikayet;
+        veriPaketi.tedavi = document.getElementById('muayeneTedavi').value.trim() || null;
+
+      } else {
+        const tarih = document.getElementById('girisTarihi').value;
+        const tanim = document.getElementById('girisIsTanimi').value.trim();
+        if(!tarih || !tanim) { alert("İşe Giriş Tarihi ve İş Tanımı zorunludur."); return; }
+
+        veriPaketi.kategori = "İşe Giriş Raporu";
+        veriPaketi.ise_giris_tarihi = tarih;
+        veriPaketi.is_tanimi = tanim;
+        veriPaketi.kronik_rahatsizlik = document.getElementById('girisKronik').value.trim() || null;
+        veriPaketi.calismaya_engel = document.getElementById('girisEngel').value.trim() || null;
+      }
+
+      // ÇEVRİMDIŞI DURUM KONTROLÜ
+      if (!navigator.onLine) {
+        if (duzenlenenKayitId) {
+           alert("İnternet bağlantısı yokken eski kayıtlar GÜNCELLENEMEZ. Lütfen internet gelince tekrar deneyin.");
+           return;
+        }
+        let kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
+        kuyruk.push({ ...veriPaketi, tarih: new Date().toISOString() });
+        localStorage.setItem('arciv_kuyruk', JSON.stringify(kuyruk));
+        alert("Bağlantı yok. Tıbbi kayıt cihaz hafızasına alındı."); 
+        formSifirla(); baglantiKontrolu(); return;
+      }
+
+      const btn = document.getElementById('gonderBtn');
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> İşleniyor...`; btn.disabled = true;
+
+      if (duzenlenenKayitId) {
+        // GÜNCELLEME İŞLEMİ (UPDATE)
+        const { error } = await db.from('raporlar_saglik').update(veriPaketi).eq('id', duzenlenenKayitId);
+        if(error) { alert("Güncellenirken hata oluştu: " + error.message); } 
+        else { alert("Kayıt başarıyla GÜNCELLENDİ!"); }
+        duzenlemeIptal(); // Formu ve butonları eski haline getir
+      } else {
+        // YENİ KAYIT İŞLEMİ (INSERT)
+        const { error } = await db.from('raporlar_saglik').insert(veriPaketi);
+        if(error) { alert("Kaydedilirken hata oluştu: " + error.message); } 
+        else { alert(`${veriPaketi.kategori} başarıyla sisteme işlendi!`); formSifirla(); }
+      }
+      
+      raporlariGetir(); 
+      btn.disabled = false;
+    }
+
+    async function senkronizeEt() {
+      if (!navigator.onLine) return;
+      let kuyruk = JSON.parse(localStorage.getItem('arciv_kuyruk') || '[]');
+      if(kuyruk.length === 0) return;
+      
+      document.getElementById('syncBanner').innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${kuyruk.length} kayıt aktarılıyor...`;
+      
+      let basarili = 0;
+      for (let r of kuyruk) {
+        const veri = { ...r }; delete veri.tarih; veri.olusturulma_tarihi = r.tarih;
+        const { error } = await db.from('raporlar_saglik').insert(veri);        
+        if(!error) basarili++;
+      }
+      if (basarili === kuyruk.length) {
+        localStorage.removeItem('arciv_kuyruk'); 
+        document.getElementById('syncBanner').classList.add('hidden'); 
+        raporlariGetir();
+      }
+    }
+
+    async function raporlariGetir() {
+      const { data } = await db.from('raporlar_saglik').select('*').eq('personel_id', localStorage.getItem('kullanici_id')).order('olusturulma_tarihi', {ascending: false}).limit(10);
+      if(data) {
+        sonRaporlarData = data; // Kayıtları global diziye atıyoruz ki Düzenle butonunda bulabilelim
+        
+        document.getElementById('raporListesi').innerHTML = data.map(r => {
+          let detayHtml = "";
+          
+          if (r.kategori === 'Poliklinik Muayenesi') {
+             detayHtml = `
+               <p><strong class="text-teal-700">[VİTAL]:</strong> Tansiyon: ${r.vital_tansiyon || '-'} | Şeker: ${r.vital_seker || '-'}</p>
+               <p><strong class="text-teal-700">[ŞİKAYET]:</strong> ${r.sikayet || '-'}</p>
+               <p><strong class="text-teal-700">[TEDAVİ]:</strong> ${r.tedavi || '-'}</p>
+             `;
+          } else {
+             detayHtml = `
+               <p><strong class="text-teal-700">[İŞ TANIMI]:</strong> ${r.is_tanimi || '-'}</p>
+               <p><strong class="text-teal-700">[KRONİK]:</strong> ${r.kronik_rahatsizlik || '-'}</p>
+               <p><strong class="text-teal-700">[ENGEL DURUMU]:</strong> ${r.calismaya_engel || '-'}</p>
+             `;
+          }
+
+          return `
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs mb-3 shadow-sm relative">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-200 pr-16">
+              <div>
+                <span class="font-bold text-slate-500">${new Date(r.olusturulma_tarihi).toLocaleString('tr-TR', {dateStyle:'short', timeStyle:'short'})}</span>
+                <span class="px-2 py-1 rounded-md text-[10px] font-black bg-teal-100 text-teal-800 ml-2 block mt-1 sm:inline sm:mt-0">${r.kategori}</span>
+              </div>
+            </div>
+            <!-- DÜZENLE BUTONU -->
+            <button onclick="duzenleModunaGec(${r.id})" class="absolute top-4 right-4 bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1.5 rounded-lg text-[10px] font-bold shadow-sm transition flex items-center gap-1">
+              <i class="fas fa-edit"></i> Düzenle
+            </button>
+            <div class="text-slate-600 leading-relaxed font-medium">
+               <p><strong class="text-slate-800">${r.hasta_ad_soyad}</strong> (${r.hasta_yas} Yaş, ${r.hasta_cinsiyet})</p>
+               ${detayHtml}
+               ${r.ekstra_not ? `<p class="mt-1 border-t pt-1 border-slate-200"><strong class="text-teal-700">[NOT]:</strong> ${r.ekstra_not}</p>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+  </script>
+</body>
+</html>
