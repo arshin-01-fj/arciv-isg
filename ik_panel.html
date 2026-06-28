@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArCiv — İK & CV Portalı</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="../config.js"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body class="bg-slate-50 flex min-h-screen font-sans relative overflow-x-hidden">
+
+  <!-- YAN MENÜ -->
+  <aside id="sidebar" class="bg-gradient-to-b from-indigo-950 to-slate-900 text-white w-72 p-6 flex flex-col shadow-2xl fixed inset-y-0 left-0 z-40 lg:static lg:inset-0 border-r border-indigo-900/50">
+    <div class="text-center mb-10 pb-6 border-b border-indigo-800/50">
+      <div class="w-16 h-16 bg-indigo-900 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner border border-indigo-700">
+        <i class="fas fa-users-cog text-3xl text-indigo-300"></i>
+      </div>
+      <h2 class="text-2xl font-black tracking-widest text-white">ArCiv</h2>
+      <p class="text-[10px] text-indigo-300 font-bold tracking-widest mt-1">İK & CV PORTALI</p>
+    </div>
+    
+    <nav class="space-y-3 flex-1">
+      
+<!-- İK PANELİNDEN ANA DİZİNDEKİ ADMİN PANELİNE DÖNÜŞ -->
+      <a href="../admin_panel.html" class="w-full flex items-center text-left p-4 hover:bg-indigo-800/50 rounded-xl transition text-sm font-semibold group">
+        <i class="fas fa-arrow-left w-8 text-indigo-400 group-hover:text-white transition"></i> Komuta Merkezine Dön
+      </a>
+
+      <div class="pt-4 mt-4 border-t border-indigo-800/50">
+        <button onclick="ikSekmeGecis('projeler')" id="btn-projeler" class="w-full flex items-center text-left p-4 bg-indigo-600 text-white rounded-xl transition text-sm font-bold shadow-md mb-2">
+          <i class="fas fa-building w-8"></i> Proje Yönetimi
+        </button>
+        <button onclick="ikSekmeGecis('ilanlar')" id="btn-ilanlar" class="w-full flex items-center text-left p-4 text-indigo-200 hover:bg-indigo-800/50 rounded-xl transition text-sm font-semibold mb-2">
+          <i class="fas fa-bullhorn w-8"></i> İlan Yönetimi
+        </button>
+        <button onclick="ikSekmeGecis('basvurular')" id="btn-basvurular" class="w-full flex items-center text-left p-4 text-indigo-200 hover:bg-indigo-800/50 rounded-xl transition text-sm font-semibold mb-2">
+          <i class="fas fa-id-badge w-8"></i> CV Havuzu
+        </button>
+        <button onclick="ikSekmeGecis('raporlar')" id="btn-raporlar" class="w-full flex items-center text-left p-4 text-indigo-200 hover:bg-indigo-800/50 rounded-xl transition text-sm font-semibold">
+          <i class="fas fa-chart-pie w-8"></i> İK Raporları
+        </button>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-4 md:p-8 lg:p-10 h-screen overflow-y-auto w-full">
+    
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 pb-4 border-b border-slate-200 gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-black text-slate-800 flex items-center gap-3">
+          <i class="fas fa-users text-indigo-600"></i> İnsan Kaynakları Portalı
+        </h1>
+        <p class="text-sm font-medium text-slate-500 mt-1" id="sayfaAltBaslik">Sistemdeki projeleri yönetin ve tanımlayın.</p>
+      </div>
+      <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-200">
+        <div class="w-8 h-8 bg-indigo-100 text-indigo-800 rounded-lg flex items-center justify-center font-black text-sm" id="adminBasHarf">A</div>
+      </div>
+    </div>
+
+    <!-- İÇERİK ALANI -->
+    <div id="icerikAlani" class="animate-fade-in">
+       <!-- JS ile dinamik doldurulacak -->
+    </div>
+
+  </main>
+
+  <!-- PROJE EKLEME MODALI -->
+  <div id="modalProje" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-slate-800"><i class="fas fa-plus-circle text-indigo-600 mr-2"></i> Yeni Proje Ekle</h3>
+        <button onclick="kapatModal('modalProje')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Proje Adı *</label>
+          <input type="text" id="projeAdi" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500" placeholder="Örn: Konya GES Projesi">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Yetkili Ad Soyad</label>
+            <input type="text" id="projeYetkili" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Yetkili GSM</label>
+            <input type="text" id="projeGsm" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">İl</label>
+            <input type="text" id="projeIl" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">İlçe</label>
+            <input type="text" id="projeIlce" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">İş Başlama Tarihi</label>
+            <input type="date" id="projeBaslama" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">İş Bitiş Tarihi</label>
+            <input type="date" id="projeBitis" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+      </div>
+      <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
+        <button onclick="kapatModal('modalProje')" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
+        <button onclick="projeKaydet()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- İLAN EKLEME MODALI -->
+  <div id="modalIlan" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-slate-800"><i class="fas fa-bullhorn text-indigo-600 mr-2"></i> Yeni İlan / Talep Ekle</h3>
+        <button onclick="kapatModal('modalIlan')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Bağlı Proje *</label>
+          <select id="ilanProjeSecim" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">İGU Sınıfı İhtiyacı</label>
+            <select id="ilanIguSinif" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+              <option value="A Sınıfı">A Sınıfı</option><option value="B Sınıfı">B Sınıfı</option><option value="C Sınıfı">C Sınıfı</option><option value="Farketmez">Farketmez / Diğer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Durum</label>
+            <select id="ilanDurumu" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500">
+              <option value="Açık">Açık</option><option value="Kapalı">Kapalı</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Başvuru Açıklaması / Detaylar</label>
+          <textarea id="ilanAciklama" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 h-24 outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+      <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
+        <button onclick="kapatModal('modalIlan')" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
+        <button onclick="ilanKaydet()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition">Yayınla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- YENİ ADAY / BAŞVURU EKLEME MODALI -->
+  <div id="modalAday" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-5 border-b flex justify-between items-center bg-slate-50">
+       <h3 id="modalAdayBaslik" class="font-bold text-slate-800"><i class="fas fa-user-plus text-indigo-600 mr-2"></i> Yeni Aday Başvurusu Ekle</h3>        <button onclick="kapatModal('modalAday')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+        
+        <!-- Kimlik & İletişim -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Ad Soyad *</label>
+            <input type="text" id="adayAd" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Telefon (GSM)</label>
+            <input type="text" id="adayGsm" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <!-- Demografi -->
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Yaş</label>
+            <input type="number" id="adayYas" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Cinsiyet</label>
+            <select id="adayCinsiyet" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+              <option value="">Seçiniz</option><option value="Erkek">Erkek</option><option value="Kadın">Kadın</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Deneyim Süresi</label>
+            <select id="adayDeneyim" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+              <option value="">Seçiniz</option><option value="0-2 Yıl">0-2 Yıl</option><option value="3-5 Yıl">3-5 Yıl</option><option value="5+ Yıl">5+ Yıl</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="border-slate-200">
+
+        <!-- Başvuru & Görüşme -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Başvurulan İlan *</label>
+          <select id="adayIlanSecim" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500"></select>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Görüşme Durumu</label>
+            <select id="adayGorusmeDurum" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+              <option value="Bekliyor">Bekliyor</option>
+              <option value="Planlandı">Planlandı</option>
+              <option value="Görüşüldü">Görüşüldü</option>
+              <option value="Olumlu">Olumlu</option>
+              <option value="Olumsuz">Olumsuz</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Görüşme Tarihi</label>
+            <input type="datetime-local" id="adayGorusmeTarih" class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Görüşme Linki</label>
+            <input type="url" id="adayGorusmeLink" placeholder="https://meet.google.com/..." class="w-full border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+      </div>
+      <div class="p-5 border-t bg-slate-50 flex justify-end gap-3">
+        <button onclick="kapatModal('modalAday')" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">İptal</button>
+        <button id="btnAdayKaydet" onclick="adayKaydet()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition">Adayı Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let aktifSekme = 'projeler';
+    let globalProjeler = [];
+    let globalIlanlar = [];
+    let globalBasvurular = [];
+
+    window.onload = () => {
+      document.getElementById('adminBasHarf').textContent = (localStorage.getItem('ad_soyad') || 'A').charAt(0).toUpperCase();
+      ikSekmeGecis('projeler');
+    };
+
+    function kapatModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function acModal(id) { document.getElementById(id).classList.remove('hidden'); }
+
+    // EKRANLAR ARASI GEÇİŞ
+    function ikSekmeGecis(sekme) {
+      aktifSekme = sekme;
+      
+      // Butonları resetle
+      const butonlar = ['projeler', 'ilanlar', 'basvurular', 'raporlar'];
+      butonlar.forEach(b => {
+         const btn = document.getElementById(`btn-${b}`);
+         btn.className = "w-full flex items-center text-left p-4 text-indigo-200 hover:bg-indigo-800/50 rounded-xl transition text-sm font-semibold mb-2";
+      });
+
+      // Aktif butonu boya
+      document.getElementById(`btn-${sekme}`).className = "w-full flex items-center text-left p-4 bg-indigo-600 text-white rounded-xl transition text-sm font-bold shadow-md mb-2";
+
+      const alan = document.getElementById('icerikAlani');
+      const altBaslik = document.getElementById('sayfaAltBaslik');
+
+      if (sekme === 'projeler') {
+        altBaslik.textContent = "Sistemdeki projeleri yönetin ve tanımlayın.";
+        alan.innerHTML = `
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+               <h3 class="font-bold text-slate-800"><i class="fas fa-building text-indigo-500 mr-2"></i> Tanımlı Projeler</h3>
+               <button onclick="acModal('modalProje')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition"><i class="fas fa-plus mr-1"></i> Yeni Proje</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase">
+                  <tr><th class="p-4">Proje Adı</th><th class="p-4">Lokasyon</th><th class="p-4">Yetkili</th><th class="p-4">Tarih Aralığı</th><th class="p-4 text-right">İşlem</th></tr>
+                </thead>
+                <tbody id="tabloProjeler" class="divide-y divide-slate-100">
+                  <tr><td colspan="5" class="p-6 text-center text-slate-400">Yükleniyor...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        veriCekProjeler();
+      } 
+      else if (sekme === 'ilanlar') {
+        altBaslik.textContent = "Personel ihtiyaçlarını ve açık ilanları yönetin.";
+        alan.innerHTML = `
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+               <h3 class="font-bold text-slate-800"><i class="fas fa-bullhorn text-indigo-500 mr-2"></i> Açık İlanlar / Talepler</h3>
+               <button onclick="ilanModalHazirla()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition"><i class="fas fa-plus mr-1"></i> Yeni İlan</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase">
+                  <tr><th class="p-4">Proje</th><th class="p-4">İGU Sınıfı</th><th class="p-4">Durum</th><th class="p-4">Oluşturulma</th><th class="p-4 text-right">İşlem</th></tr>
+                </thead>
+                <tbody id="tabloIlanlar" class="divide-y divide-slate-100">
+                  <tr><td colspan="5" class="p-6 text-center text-slate-400">Yükleniyor...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        veriCekIlanlar();
+      }
+      else if (sekme === 'basvurular') {
+        altBaslik.textContent = "Gelen CV'leri inceleyin ve değerlendirin.";
+        alan.innerHTML = `
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50">
+               <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-id-badge text-indigo-500"></i> CV Havuzu</h3>
+               <div class="flex gap-2">
+                 <select id="filtreIlan" onchange="filtreleBasvurular()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none"><option value="TÜMÜ">Tüm İlanlar</option></select>
+                 <button onclick="adayModalHazirla()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2"><i class="fas fa-plus"></i> Yeni Aday</button>
+               </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm border-collapse min-w-[800px]">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase">
+                  <tr><th class="p-4">Aday Adı</th><th class="p-4">Demografi</th><th class="p-4">Başvurulan İlan</th><th class="p-4">Görüşme & Tarih</th><th class="p-4 text-right">İşlem</th></tr>
+                </thead>
+                <tbody id="tabloBasvurular" class="divide-y divide-slate-100">
+                  <tr><td colspan="5" class="p-6 text-center text-slate-400">Yükleniyor...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        veriCekBasvurular();
+      }
+      else if (sekme === 'raporlar') {
+        altBaslik.textContent = "Gelişmiş İK ve Personel İstatistikleri.";
+        alan.innerHTML = `
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+              <h3 class="font-bold text-slate-700 mb-4 text-center"><i class="fas fa-birthday-cake text-indigo-500 mr-2"></i> Yaş Dağılımı</h3>
+              <canvas id="grafikYas" class="max-h-64"></canvas>
+            </div>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+              <h3 class="font-bold text-slate-700 mb-4 text-center"><i class="fas fa-venus-mars text-pink-500 mr-2"></i> Cinsiyet Dağılımı</h3>
+              <canvas id="grafikCinsiyet" class="max-h-64"></canvas>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+              <h3 class="font-bold text-slate-700 mb-4 text-center"><i class="fas fa-briefcase text-emerald-500 mr-2"></i> Deneyim Süresi</h3>
+              <canvas id="grafikDeneyim" class="max-h-64"></canvas>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+              <h3 class="font-bold text-slate-700 mb-4 text-center"><i class="fas fa-wallet text-amber-500 mr-2"></i> Maaş Beklentisi</h3>
+              <canvas id="grafikMaas" class="max-h-64"></canvas>
+            </div>
+          </div>
+        `;
+        
+        // Arayüz yüklendikten hemen sonra grafikleri çizdiren fonksiyonu çağırıyoruz
+        setTimeout(raporlariOlustur, 100);
+      }
+    }
+
+    // --- VERİ ÇEKME FONKSİYONLARI ---
+
+   async function veriCekProjeler() {
+      const { data, error } = await db.from('ik_projeler').select('*').order('id', {ascending: false});
+      const tbody = document.getElementById('tabloProjeler');
+      if (error || !data || data.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Kayıtlı proje bulunamadı.</td></tr>`;
+         return;
+      }
+      globalProjeler = data;
+      tbody.innerHTML = data.map(p => `
+        <tr class="hover:bg-indigo-50/50 transition">
+          <td class="p-4 font-bold text-slate-800">${p.proje_adi}</td>
+          <td class="p-4 text-slate-600">${p.il || '-'} / ${p.ilce || '-'}</td>
+          <td class="p-4 text-slate-600">${p.yetkili_ad_soyad || '-'} <br><span class="text-xs text-slate-400">${p.yetkili_gsm || ''}</span></td>
+          <td class="p-4 text-xs font-medium text-slate-500">${p.is_baslama_tarihi || '?'} <i class="fas fa-arrow-right mx-1"></i> ${p.is_bitis_tarihi || '?'}</td>
+          <td class="p-4 text-right">
+             <button onclick="projeSil(${p.id})" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+    async function veriCekIlanlar() {
+      const { data, error } = await db.from('ik_ilanlar').select('*, ik_projeler(proje_adi)').order('id', {ascending: false});
+      const tbody = document.getElementById('tabloIlanlar');
+      if (error || !data || data.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Açık ilan bulunamadı.</td></tr>`;
+         return;
+      }
+      globalIlanlar = data;
+      tbody.innerHTML = data.map(i => {
+         const pAdi = i.ik_projeler ? i.ik_projeler.proje_adi : 'Bilinmeyen Proje';
+         const durumBadge = i.ilan_durumu === 'Açık' ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Açık</span>' : '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-xs font-bold">Kapalı</span>';
+         const tarih = new Date(i.olusturulma_tarihi).toLocaleDateString('tr-TR');
+         return `
+          <tr class="hover:bg-indigo-50/50 transition">
+            <td class="p-4 font-bold text-slate-800">${pAdi}</td>
+            <td class="p-4"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md text-xs font-black">${i.igu_sinifi || '-'}</span></td>
+            <td class="p-4">${durumBadge}</td>
+            <td class="p-4 text-sm text-slate-500">${tarih}</td>
+            <td class="p-4 text-right flex justify-end gap-2">
+               <button onclick="ilanDuzenle(${i.id})" class="bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-edit"></i></button>
+               <button onclick="ilanSil(${i.id})" class="bg-red-50 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+         `;
+      }).join('');
+    }
+
+    async function veriCekBasvurular() {
+      const { data, error } = await db.from('ik_basvurular').select('*, ik_ilanlar(igu_sinifi, ik_projeler(proje_adi))').order('id', {ascending: false});
+      const tbody = document.getElementById('tabloBasvurular');
+      if (error || !data || data.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Henüz CV havuzunda aday yok.</td></tr>`;
+         return;
+      }
+      globalBasvurular = data;
+      tbody.innerHTML = data.map(b => {
+         let projeAdi = "Bağımsız Başvuru";
+         let igu = "";
+         if(b.ik_ilanlar) {
+            igu = b.ik_ilanlar.igu_sinifi;
+            if(b.ik_ilanlar.ik_projeler) projeAdi = b.ik_ilanlar.ik_projeler.proje_adi;
+         }
+         return `
+          <tr class="hover:bg-indigo-50/50 transition">
+            <td class="p-4 font-bold text-slate-800 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">${b.ad_soyad.charAt(0)}</div>
+              <div>${b.ad_soyad}<br><span class="text-[10px] text-slate-400 font-normal">${b.gsm || 'Tel Yok'}</span></div>
+            </td>
+            <td class="p-4 text-xs text-slate-600">
+               ${b.yas ? b.yas + ' Yaş' : ''} ${b.cinsiyet ? '| ' + b.cinsiyet : ''} <br> 
+               <b>Deneyim:</b> ${b.deneyim_suresi || '-'}
+            </td>
+            <td class="p-4 text-sm">
+               <span class="font-bold text-indigo-700 block">${projeAdi}</span>
+               <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">${igu} Pozisyonu</span>
+            </td>
+            <td class="p-4">
+               <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold block w-max mb-1">${b.online_gorusme_durumu || 'Bekliyor'}</span>
+               ${b.gorusme_tarihi ? `<div class="text-[11px] text-slate-500 mt-1"><i class="far fa-calendar-alt"></i> ${new Date(b.gorusme_tarihi).toLocaleString('tr-TR', {dateStyle: 'short', timeStyle: 'short'})}</div>` : ''}
+               ${b.gorusme_linki ? `<a href="${b.gorusme_linki}" target="_blank" class="text-[11px] text-emerald-600 hover:text-emerald-700 hover:underline font-semibold block mt-1"><i class="fas fa-video"></i> Linke Git</a>` : ''}
+            </td>
+          </tr>
+         `;
+      }).join('');
+    }
+
+    // --- KAYIT FONKSİYONLARI ---
+
+    async function projeKaydet() {
+      const pAd = document.getElementById('projeAdi').value.trim();
+      if(!pAd) return alert("Proje Adı zorunludur.");
+      
+      const paket = {
+         proje_adi: pAd,
+         yetkili_ad_soyad: document.getElementById('projeYetkili').value,
+         yetkili_gsm: document.getElementById('projeGsm').value,
+         il: document.getElementById('projeIl').value,
+         ilce: document.getElementById('projeIlce').value,
+         is_baslama_tarihi: document.getElementById('projeBaslama').value || null,
+         is_bitis_tarihi: document.getElementById('projeBitis').value || null
+      };
+
+      const { error } = await db.from('ik_projeler').insert(paket);
+      if(error) alert("Hata: " + error.message);
+      else {
+         kapatModal('modalProje');
+         veriCekProjeler();
+      }
+    }
+
+    async function projeSil(id) {
+       if(!confirm("Proje ve ona bağlı ilanlar/başvurular silinecek. Emin misiniz?")) return;
+       await db.from('ik_projeler').delete().eq('id', id);
+       veriCekProjeler();
+    }
+
+    async function ilanModalHazirla() {
+       // Önce projeleri veritabanından güncel çek ki select box dolsun
+       const { data } = await db.from('ik_projeler').select('id, proje_adi');
+       const secici = document.getElementById('ilanProjeSecim');
+       if(!data || data.length === 0) {
+          alert("Önce bir proje tanımlamalısınız!"); return;
+       }
+       secici.innerHTML = data.map(p => `<option value="${p.id}">${p.proje_adi}</option>`).join('');
+       acModal('modalIlan');
+    }
+
+    async function ilanKaydet() {
+      const pId = document.getElementById('ilanProjeSecim').value;
+      if(!pId) return alert("Proje seçimi zorunludur.");
+      
+      const paket = {
+         proje_id: parseInt(pId),
+         igu_sinifi: document.getElementById('ilanIguSinif').value,
+         ilan_durumu: document.getElementById('ilanDurumu').value,
+         basvuru_aciklama: document.getElementById('ilanAciklama').value
+      };
+
+      const { error } = await db.from('ik_ilanlar').insert(paket);
+      if(error) alert("Hata: " + error.message);
+      else {
+         kapatModal('modalIlan');
+         veriCekIlanlar();
+      }
+    }
+
+
+    async function ilanDuzenle(id) {
+       const ilan = globalIlanlar.find(i => i.id === id);
+       if(!ilan) return;
+
+       guncellenecekIlanId = id;
+       
+       // Modal'ı açmadan önce projeleri doldur (Seçili kalması için)
+       await ilanModalHazirla(); 
+       
+       // Formu mevcut verilerle doldur
+       document.getElementById('ilanProjeSecim').value = ilan.proje_id;
+       document.getElementById('ilanIguSinif').value = ilan.igu_sinifi;
+       document.getElementById('ilanDurumu').value = ilan.ilan_durumu;
+       document.getElementById('ilanAciklama').value = ilan.basvuru_aciklama || '';
+       
+       acModal('modalIlan');
+    }
+
+    async function ilanSil(id) {
+       if(!confirm("İlan ve bu ilana gelen başvurular silinecek. Emin misiniz?")) return;
+       await db.from('ik_ilanlar').delete().eq('id', id);
+       veriCekIlanlar();
+    }
+
+    // --- CV HAVUZU FİLTRELEME MOTORU ---
+    function filtreleBasvurular() {
+      const fIlan = document.getElementById('filtreIlan').value;
+      const fYas = document.getElementById('filtreYas').value;
+      const fCinsiyet = document.getElementById('filtreCinsiyet').value;
+      const fDeneyim = document.getElementById('filtreDeneyim').value;
+
+      const filtrelenmis = globalBasvurular.filter(b => {
+         // İlan Filtresi
+         let pAdi = "Bağımsız Başvuru";
+         if(b.ik_ilanlar && b.ik_ilanlar.ik_projeler) pAdi = b.ik_ilanlar.ik_projeler.proje_adi;
+         const ilanUyumu = (fIlan === 'TÜMÜ' || pAdi === fIlan);
+
+         // Yaş Filtresi
+         let yasUyumu = true;
+         if (fYas !== 'TÜMÜ') {
+            const y = parseInt(b.yas) || 0;
+            if (fYas === '18-25') yasUyumu = (y >= 18 && y <= 25);
+            else if (fYas === '26-35') yasUyumu = (y >= 26 && y <= 35);
+            else if (fYas === '36+') yasUyumu = (y >= 36);
+         }
+
+         // Cinsiyet Filtresi
+         const cinsiyetUyumu = (fCinsiyet === 'TÜMÜ' || b.cinsiyet === fCinsiyet);
+
+         // Deneyim Filtresi (Veritabanındaki deneyim verisiyle eşleştirme)
+         let deneyimUyumu = true;
+         if (fDeneyim !== 'TÜMÜ') {
+            const d = b.deneyim_suresi || '';
+            if (fDeneyim === '0-2') deneyimUyumu = d.includes('0-2');
+            else if (fDeneyim === '3-5') deneyimUyumu = d.includes('3-5');
+            else if (fDeneyim === '5+') deneyimUyumu = d.includes('5+');
+         }
+
+         return ilanUyumu && yasUyumu && cinsiyetUyumu && deneyimUyumu;
+      });
+
+      basvurulariEkranaBas(filtrelenmis);
+    }
+
+    // --- ADAY İŞLEMLERİ (BAŞVURU VE GÖRÜŞME) ---
+   // --- ADAY İŞLEMLERİ (BAŞVURU, GÖRÜŞME, GÜNCELLEME, SİLME) ---
+    let guncellenecekAdayId = null; // Düzenlenen adayın ID'sini hafızada tutmak için
+
+    async function adayModalHazirla() {
+       guncellenecekAdayId = null; // Yeni ekleme modu
+       
+       // Açık ilanları çek
+       const { data } = await db.from('ik_ilanlar').select('id, igu_sinifi, ik_projeler(proje_adi)').eq('ilan_durumu', 'Açık');
+       const secici = document.getElementById('adayIlanSecim');
+       
+       if(!data || data.length === 0) {
+          alert("Sistemde açık ilan bulunmuyor. Önce 'İlan Yönetimi'nden ilan açmalısınız."); return;
+       }
+       secici.innerHTML = data.map(i => `<option value="${i.id}">${i.ik_projeler.proje_adi} - ${i.igu_sinifi}</option>`).join('');
+       
+       // Modal görünümünü "Yeni Ekleme" formatına çek
+       document.getElementById('modalAdayBaslik').innerHTML = `<i class="fas fa-user-plus text-indigo-600 mr-2"></i> Yeni Aday Başvurusu Ekle`;
+       document.getElementById('btnAdayKaydet').textContent = "Adayı Kaydet";
+       
+       // Formun içini boşalt
+       document.querySelectorAll('#modalAday input, #modalAday select').forEach(el => el.value = '');
+       document.getElementById('adayGorusmeDurum').value = 'Bekliyor'; // Varsayılan değer
+       
+       acModal('modalAday');
+    }
+
+    async function adayDuzenle(id) {
+       const aday = globalBasvurular.find(b => b.id === id);
+       if(!aday) return;
+
+       guncellenecekAdayId = id; // Güncelleme modu aktif
+
+       // İlanları çek ve menüyü doldur (Adayın eski ilanı kapalıysa bile seçebilsin diye tüm ilanları çekiyoruz)
+       const { data } = await db.from('ik_ilanlar').select('id, igu_sinifi, ik_projeler(proje_adi)');
+       document.getElementById('adayIlanSecim').innerHTML = data.map(i => `<option value="${i.id}">${i.ik_projeler?.proje_adi || 'Bilinmeyen'} - ${i.igu_sinifi}</option>`).join('');
+
+       // Formu adayın mevcut bilgileriyle doldur
+       document.getElementById('adayAd').value = aday.ad_soyad || '';
+       document.getElementById('adayGsm').value = aday.gsm || '';
+       document.getElementById('adayYas').value = aday.yas || '';
+       document.getElementById('adayCinsiyet').value = aday.cinsiyet || '';
+       document.getElementById('adayDeneyim').value = aday.deneyim_suresi || '';
+       document.getElementById('adayIlanSecim').value = aday.ilan_id || '';
+       document.getElementById('adayGorusmeDurum').value = aday.online_gorusme_durumu || 'Bekliyor';
+       document.getElementById('adayGorusmeLink').value = aday.gorusme_linki || '';
+
+       // Tarihi input'un anlayacağı formata (YYYY-MM-DDThh:mm) çevirme
+       if(aday.gorusme_tarihi) {
+           const tarih = new Date(aday.gorusme_tarihi);
+           const timezoneFarki = tarih.getTimezoneOffset() * 60000;
+           const lokalTarih = new Date(tarih - timezoneFarki).toISOString().slice(0, 16);
+           document.getElementById('adayGorusmeTarih').value = lokalTarih;
+       } else {
+           document.getElementById('adayGorusmeTarih').value = '';
+       }
+
+       // Modal görünümünü "Düzenleme" formatına çek
+       document.getElementById('modalAdayBaslik').innerHTML = `<i class="fas fa-user-edit text-amber-500 mr-2"></i> Aday Başvurusunu Düzenle`;
+       document.getElementById('btnAdayKaydet').textContent = "Değişiklikleri Güncelle";
+
+       acModal('modalAday');
+    }
+
+    async function adayKaydet() {
+      const adSoyad = document.getElementById('adayAd').value.trim();
+      const ilanId = document.getElementById('adayIlanSecim').value;
+      
+      if(!adSoyad || !ilanId) return alert("Lütfen Ad Soyad ve Başvurulan İlan alanlarını doldurun.");
+      
+      const paket = {
+         ad_soyad: adSoyad,
+         gsm: document.getElementById('adayGsm').value,
+         yas: document.getElementById('adayYas').value || null,
+         cinsiyet: document.getElementById('adayCinsiyet').value,
+         deneyim_suresi: document.getElementById('adayDeneyim').value,
+         ilan_id: parseInt(ilanId),
+         online_gorusme_durumu: document.getElementById('adayGorusmeDurum').value,
+         gorusme_tarihi: document.getElementById('adayGorusmeTarih').value || null,
+         gorusme_linki: document.getElementById('adayGorusmeLink').value || null
+      };
+
+      if (guncellenecekAdayId) {
+         // EĞER GÜNCELLEME MODUNDAYSAK (UPDATE)
+         const { error } = await db.from('ik_basvurular').update(paket).eq('id', guncellenecekAdayId);
+         if(error) alert("Güncelleme Hatası: " + error.message);
+         else formKapatVeYenile();
+      } else {
+         // EĞER YENİ ADAY EKLİYORSAK (INSERT)
+         const { error } = await db.from('ik_basvurular').insert(paket);
+         if(error) alert("Kayıt Hatası: " + error.message);
+         else formKapatVeYenile();
+      }
+    }
+
+    async function adaySil(id) {
+       if(!confirm("Adayı CV Havuzundan kalıcı olarak silmek istediğinize emin misiniz?")) return;
+       await db.from('ik_basvurular').delete().eq('id', id);
+       veriCekBasvurular(); // Tabloyu yenile
+    }
+
+    // Modal kapandıktan sonra temizlik ve yenileme işlemi yapan yardımcı fonksiyon
+    function formKapatVeYenile() {
+       kapatModal('modalAday');
+       guncellenecekAdayId = null;
+       veriCekBasvurular();
+    }
+
+    function basvurulariEkranaBas(data) {
+      const tbody = document.getElementById('tabloBasvurular');
+      if (!data || data.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Bu kriterlere uygun aday bulunamadı.</td></tr>`;
+         return;
+      }
+      tbody.innerHTML = data.map(b => {
+         let projeAdi = "Bağımsız Başvuru";
+         let igu = "";
+         if(b.ik_ilanlar) {
+            igu = b.ik_ilanlar.igu_sinifi;
+            if(b.ik_ilanlar.ik_projeler) projeAdi = b.ik_ilanlar.ik_projeler.proje_adi;
+         }
+         return `
+          <tr class="hover:bg-indigo-50/50 transition">
+            <td class="p-4 font-bold text-slate-800 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">${b.ad_soyad.charAt(0)}</div>
+              <div>${b.ad_soyad}<br><span class="text-[10px] text-slate-400 font-normal">${b.gsm || 'Tel Yok'}</span></div>
+            </td>
+            <td class="p-4 text-xs text-slate-600">
+               ${b.yas ? b.yas + ' Yaş' : ''} ${b.cinsiyet ? '| ' + b.cinsiyet : ''} <br> 
+               <b>Deneyim:</b> ${b.deneyim_suresi || '-'}
+            </td>
+            <td class="p-4 text-sm">
+               <span class="font-bold text-indigo-700 block">${projeAdi}</span>
+               <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">${igu} Pozisyonu</span>
+            </td>
+           <td class="p-4">
+               <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold block w-max mb-1">${b.online_gorusme_durumu || 'Bekliyor'}</span>
+               ${b.gorusme_tarihi ? `<div class="text-[11px] text-slate-500 mt-1"><i class="far fa-calendar-alt"></i> ${new Date(b.gorusme_tarihi).toLocaleString('tr-TR', {dateStyle: 'short', timeStyle: 'short'})}</div>` : ''}
+               ${b.gorusme_linki ? `<a href="${b.gorusme_linki}" target="_blank" class="text-[11px] text-emerald-600 hover:text-emerald-700 hover:underline font-semibold block mt-1"><i class="fas fa-video"></i> Linke Git</a>` : ''}
+            </td>
+          </tr>
+         `;
+      }).join('');
+    }
+
+    // --- İK RAPORLARI VE GRAFİKLER ---
+    let chartYas, chartCinsiyet, chartDeneyim, chartMaas;
+
+    async function raporlariOlustur() {
+      // Eğer aday verisi boşsa önce veritabanından çekelim
+      if (!globalBasvurular || globalBasvurular.length === 0) {
+        const { data } = await db.from('ik_basvurular').select('*');
+        if (data) globalBasvurular = data;
+      }
+
+      // 1. Verileri Analiz Etme ve Gruplama
+      let yasVerisi = { '18-25': 0, '26-35': 0, '36+': 0 };
+      let cinsiyetVerisi = { 'Erkek': 0, 'Kadın': 0 };
+      let deneyimVerisi = { '0-2 Yıl': 0, '3-5 Yıl': 0, '5+ Yıl': 0 };
+
+      globalBasvurular.forEach(b => {
+        // Yaş Analizi
+        const y = parseInt(b.yas) || 0;
+        if (y >= 18 && y <= 25) yasVerisi['18-25']++;
+        else if (y >= 26 && y <= 35) yasVerisi['26-35']++;
+        else if (y >= 36) yasVerisi['36+']++;
+
+        // Cinsiyet Analizi
+        if (b.cinsiyet === 'Erkek') cinsiyetVerisi['Erkek']++;
+        else if (b.cinsiyet === 'Kadın') cinsiyetVerisi['Kadın']++;
+
+        // Deneyim Analizi
+        const d = b.deneyim_suresi || '';
+        if (d.includes('0-2')) deneyimVerisi['0-2 Yıl']++;
+        else if (d.includes('3-5')) deneyimVerisi['3-5 Yıl']++;
+        else if (d.includes('5')) deneyimVerisi['5+ Yıl']++;
+      });
+
+      // Eski grafikler varsa çakışmaması için temizleyelim
+      if(chartYas) chartYas.destroy();
+      if(chartCinsiyet) chartCinsiyet.destroy();
+      if(chartDeneyim) chartDeneyim.destroy();
+      if(chartMaas) chartMaas.destroy();
+
+      // 2. Grafikleri Çizdirme
+      // Yaş Grafiği (Doughnut)
+      const ctxYas = document.getElementById('grafikYas');
+      if(ctxYas) {
+        chartYas = new Chart(ctxYas, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(yasVerisi),
+            datasets: [{
+              data: Object.values(yasVerisi),
+              backgroundColor: ['#818cf8', '#34d399', '#fbbf24'],
+              borderWidth: 0
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // Cinsiyet Grafiği (Pie)
+      const ctxCins = document.getElementById('grafikCinsiyet');
+      if(ctxCins) {
+        chartCinsiyet = new Chart(ctxCins, {
+          type: 'pie',
+          data: {
+            labels: Object.keys(cinsiyetVerisi),
+            datasets: [{
+              data: Object.values(cinsiyetVerisi),
+              backgroundColor: ['#60a5fa', '#f472b6'],
+              borderWidth: 0
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // Deneyim Grafiği (Bar)
+      const ctxDeneyim = document.getElementById('grafikDeneyim');
+      if(ctxDeneyim) {
+        chartDeneyim = new Chart(ctxDeneyim, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(deneyimVerisi),
+            datasets: [{
+              label: 'Kişi Sayısı',
+              data: Object.values(deneyimVerisi),
+              backgroundColor: '#10b981',
+              borderRadius: 6
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+      }
+
+      // Maaş Grafiği (Line - Şimdilik örnek veri, tabloda maaş sütunu olunca gerçek veriye bağlanabilir)
+      const ctxMaas = document.getElementById('grafikMaas');
+      if(ctxMaas) {
+        chartMaas = new Chart(ctxMaas, {
+          type: 'line',
+          data: {
+            labels: ['Asgari', 'Asgari + %20', 'Uzman', 'Yönetici'],
+            datasets: [{
+              label: 'Beklenti Dağılımı',
+              data: [5, 12, 8, 3],
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.2)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+    }
+
+  </script>
+</body>
+</html>
